@@ -39,7 +39,7 @@
 #define LINE_USBCONN                                    PAL_LINE(IOPORT0, 6)
 #define LINE_USBVBUS                                    PAL_LINE(IOPORT0, 3)
 
-#define LINE_WINMAC                                     PAL_LINE(IOPORT0, 4)
+#define LINE_WINMAC                                     PAL_LINE(IOPORT0, 20) // 3.3v (left) pin
 
 #define LINE_ROW1                                       PAL_LINE(IOPORT1, 25)
 #define LINE_ROW2                                       PAL_LINE(IOPORT0, 0)
@@ -68,9 +68,9 @@
 #define LINE_LED2_CS                                    PAL_LINE(IOPORT1, 16)
 
 
-#define LINE_UART_RX                                    PAL_LINE(IOPORT1, 14)
-#define LINE_UART_TX                                    PAL_LINE(IOPORT1, 27)
-#define LINE_BLE_RSTN                                   PAL_LINE(IOPORT0, 20)
+#define LINE_UART_RX                                    PAL_LINE(IOPORT1, 26) // To pin 21 on BLE
+#define LINE_UART_TX                                    PAL_LINE(IOPORT1, 27) // To pin 20 on BLE
+#define LINE_BLE_RSTN                                   PAL_LINE(IOPORT0, 23) // Unsure, to pin 11 on BLE
 
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus
