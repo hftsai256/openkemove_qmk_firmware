@@ -126,7 +126,7 @@ const uint16_t keymaps_size = sizeof(keymaps);
 void dip_switch_update_user(uint8_t index, bool active) {
   switch (index) {
     case 0:
-      if (!active) {
+      if (active) {
         layer_on(_MAC_LAYER);
       } else {
         layer_off(_MAC_LAYER);
