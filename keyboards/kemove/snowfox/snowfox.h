@@ -5,6 +5,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "sled17341.h"
+#include "board.h"
 
 #define SF_LED_STEP 0x40
 
@@ -19,6 +20,9 @@ enum SNOWFOX_KEYCODES {
     SNOWFOX_BLE_CONN,
     SNOWFOX_BLE_DISCOVER,
     SNOWFOX_BLE_DISCONN,
+    SNOWFOX_BLE_KB1,
+    SNOWFOX_BLE_KB2,
+    SNOWFOX_BLE_KB3,
     SNOWFOX_SAFE_RANGE,
 };
 
@@ -28,9 +32,10 @@ extern THD_WORKING_AREA(waLEDThread, 128);
 THD_FUNCTION(LEDThread, arg);
 
 extern SerialConfig serialCfg;
-extern thread_t *bleThread;
+extern thread_t *ble_thread;
 
 extern const SPIConfig spi1Config;
+extern thread_t *led_thread;
 extern uint8_t led_brightness;
 
 void snowfox_early_init(void);

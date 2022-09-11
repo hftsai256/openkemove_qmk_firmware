@@ -72,6 +72,13 @@
 #define LINE_UART_TX                                    PAL_LINE(IOPORT1, 27) // To pin 20 on BLE
 #define LINE_BLE_RSTN                                   PAL_LINE(IOPORT0, 23) // To pin 11 on BLE
 
+// Board Special Traits
+typedef struct {
+    bool dip_winmac_win;
+} traits_t;
+
+extern const traits_t snowfox_traits;
+
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus
 extern "C" {

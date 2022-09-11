@@ -115,7 +115,7 @@ const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TRNS, KC_F1, KC_F2, KC_F3, KC_F4, KC_F5, KC_F6, KC_F7, KC_F8, KC_F9, KC_F10, KC_F11, KC_F12,   SNOWFOX_LED_OFF,
     SNOWFOX_LED_NEXT, SNOWFOX_BLE_DISCOVER, SNOWFOX_BLE_CONN, SNOWFOX_BLE_DISCONN, KC_TRNS, KC_TRNS, KC_TRNS, KC_PSCR, KC_SLCK, KC_PAUS, SNOWFOX_LED_BDN, SNOWFOX_LED_BUP, SNOWFOX_LED_OFF,  SNOWFOX_LED_ON,
     KC_CAPS, KC_MPLY, KC_MPRV, KC_MNXT, KC_MUTE, KC_VOLD, KC_VOLU, KC_INS, KC_HOME, KC_PGUP, SNOWFOX_LED_PDN, SNOWFOX_LED_PUP,         KC_TRNS,
-    KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_DEL, KC_END, KC_PGDN, KC_TRNS, KC_DELETE, KC_PGUP,
+    KC_TRNS, SNOWFOX_BLE_KB1, SNOWFOX_BLE_KB2, SNOWFOX_BLE_KB3, KC_TRNS, KC_TRNS, KC_DEL, KC_END, KC_PGDN, KC_TRNS, KC_DELETE, KC_PGUP,
     KC_TRNS, KC_TRNS, KC_TRNS,      KC_TRNS,             KC_TRNS,  KC_TRNS,  KC_PGDN, KC_PGDN
   ),
 };
@@ -126,10 +126,10 @@ const uint16_t keymaps_size = sizeof(keymaps);
 void dip_switch_update_user(uint8_t index, bool active) {
   switch (index) {
     case 0:
-      if (active) {
-        layer_on(_MAC_LAYER);
-      } else {
+      if (active == snowfox_traits.dip_winmac_win) {
         layer_off(_MAC_LAYER);
+      } else {
+        layer_on(_MAC_LAYER);
       }
       break;
   }

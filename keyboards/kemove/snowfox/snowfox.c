@@ -2,7 +2,8 @@
 #include "snowfox_ble.h"
 #include "string.h"
 
-thread_t *bleThread;
+thread_t *led_thread = NULL;
+thread_t *ble_thread = NULL;
 
 SerialConfig serialCfg = {
     9600
@@ -28,8 +29,8 @@ void snowfox_early_init(void) {
 }
 
 void matrix_init_kb(void) {
-    (void) chThdCreateStatic(waLEDThread, sizeof(waLEDThread), NORMALPRIO, LEDThread, NULL);
-    bleThread = chThdCreateStatic(waBLEThread, sizeof(waBLEThread), NORMALPRIO, BLEThread, NULL);
+    led_thread = chThdCreateStatic(waLEDThread, sizeof(waLEDThread), NORMALPRIO, LEDThread, NULL);
+    ble_thread = chThdCreateStatic(waBLEThread, sizeof(waBLEThread), NORMALPRIO, BLEThread, NULL);
     matrix_init_user();
 }
 
@@ -82,6 +83,15 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 return false;
             case SNOWFOX_BLE_DISCONN:
                 snowfox_ble_disconnect();
+                return false;
+            case SNOWFOX_BLE_KB1:
+                snowfox_ble_select(KEYBOARD1);
+                return false;
+            case SNOWFOX_BLE_KB2:
+                snowfox_ble_select(KEYBOARD2);
+                return false;
+            case SNOWFOX_BLE_KB3:
+                snowfox_ble_select(KEYBOARD3);
                 return false;
             default:
                 break;
