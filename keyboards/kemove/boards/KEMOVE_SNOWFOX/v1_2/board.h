@@ -72,6 +72,13 @@
 #define LINE_UART_TX                                    PAL_LINE(IOPORT1, 27)
 #define LINE_BLE_RSTN                                   PAL_LINE(IOPORT1, 14)
 
+// Board Special Traits
+typedef struct {
+    bool dip_winmac_win;
+} traits_t;
+
+extern const traits_t snowfox_traits;
+
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus
 extern "C" {

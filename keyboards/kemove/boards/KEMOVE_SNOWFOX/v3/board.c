@@ -49,6 +49,8 @@ const ioline_t col_list[MATRIX_COLS] = {
     LINE_COL9,
 };
 
+const traits_t snowfox_traits = {.dip_winmac_win=0};
+
 void __chibios_override___early_init(void) {
 }
 
