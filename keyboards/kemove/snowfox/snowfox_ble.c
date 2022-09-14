@@ -229,6 +229,7 @@ static uint8_t read_uart_msg() {
 /* BLE THREAD */
 THD_WORKING_AREA(waBLEThread, 128);
 THD_FUNCTION(BLEThread, arg) {
+    (void)arg;
     chRegSetThreadName("BLEThread");
 
     snowfox_ble_reset();
