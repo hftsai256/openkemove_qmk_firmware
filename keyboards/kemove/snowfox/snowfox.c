@@ -22,9 +22,6 @@ void dip_switch_update_kb(uint8_t index, bool active) {
 }
 
 void snowfox_early_init(void) {
-    chMtxObjectInit(&ble_ok_mutex);
-    chCondObjectInit(&ble_ok_cond);
-
     snowfox_early_led_init();
 }
 

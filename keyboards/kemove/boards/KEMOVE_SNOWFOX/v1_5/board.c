@@ -49,7 +49,7 @@ const ioline_t col_list[MATRIX_COLS] = {
     LINE_COL9,
 };
 
-const traits_t snowfox_traits = {.dip_winmac_win=0};
+const traits_t snowfox_traits = {.dip_winmac_win=1};
 
 void __chibios_override___early_init(void) {
 }
@@ -64,6 +64,9 @@ void __chibios_override_boardInit(void) {
     // USB
     palSetLineMode(LINE_USBVBUS, MODE_FUNC_ALT1 | MODE_MODE_PULL_UP | MODE_AD_DIGITAL);
     palSetLineMode(LINE_USBCONN, MODE_FUNC_ALT1);
+
+    // DIP Switch
+    palSetLineMode(LINE_WINMAC, MODE_DIR_IN | MODE_MODE_PULL_UP | MODE_AD_DIGITAL);
 
     // Keyboard Matrix
     for (int i = 0; i < MATRIX_ROWS; ++i)
