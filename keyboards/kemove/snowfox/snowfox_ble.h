@@ -21,6 +21,7 @@
 #include "ch.h"
 
 #define BLE_UART_BUFFER_SIZE   32U
+#define BLE_HID_REPORT_SIZE    16U // Including null terminator
 
 #define BLE_EVENT_POST         0x01
 #define BLE_EVENT_DISCOVER     0x02
@@ -43,17 +44,21 @@ typedef enum {
     KEYBOARD3
 } BLEKeyboard;
 
-extern BLEState ble_state;
-extern BLEKeyboard ble_keyboard;
-extern uint8_t ble_led_status;
-extern mutex_t ble_ok_mutex;
-extern condition_variable_t ble_ok_cond;
-extern uint8_t ble_ok;
+typedef struct {
+    BLEState state;
+    BLEKeyboard keyboard;
+    uint8_t led_page;
+
+#ifdef NKRO_ENABLE
+    bool last_nkro_state;
+#endif
+
+    host_driver_t *last_driver;
+} ble_handle_t;
 
 extern THD_WORKING_AREA(waBLEThread, 128);
 THD_FUNCTION(BLEThread, arg);
 
-void snowfox_ble_startup(void);
 void snowfox_ble_select(BLEKeyboard port);
 void snowfox_ble_discover(void);
 void snowfox_ble_connect(void);
