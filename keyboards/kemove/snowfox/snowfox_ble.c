@@ -19,6 +19,7 @@
 #include "hal.h"
 #include "host.h"
 #include "host_driver.h"
+#include "printf.h"
 #include <string.h>
 
 
@@ -69,9 +70,9 @@ static uint8_t snowfox_ble_leds(void) {
 static void snowfox_ble_mouse(report_mouse_t *report) {}
 
 static void snowfox_ble_keyboard(report_keyboard_t *report) {
-    uint8_t buffer[15] = {'A', 'T', '+', 'H', 'I', 'D','=', 0x1,
-    report->raw[0], report->raw[2], report->raw[3], report->raw[4], report->raw[5], report->raw[6], report->raw[7]};
-    sdWrite(&SD1, buffer, 15);
+    sdWrite(&SD1, (uint8_t*) "AT+HID=\1", 8);
+    sdWrite(&SD1, (uint8_t*) &report->mods, sizeof(report->mods));
+    sdWrite(&SD1, (uint8_t*) &report->keys, sizeof(report->keys));
 }
 
 static void snowfox_ble_system(uint16_t data) {}
@@ -123,9 +124,11 @@ static void snowfox_ble_reset() {
 }
 
 static void snowfox_ble_update_name() {
-    char cmd[BLE_UART_BUFFER_SIZE] = "AT+NAME=SnowfoxQMK?\r\n";
-    cmd[18] = ble_handle.keyboard + '0';
-    ble_command_wait(cmd, 100);
+    unsigned char keyboard_port = ble_handle.keyboard + '0';
+
+    sdWrite(&SD1, (unsigned char*) "AT+NAME=SnowfoxQMK", 18);
+    sdWrite(&SD1, &keyboard_port, sizeof(keyboard_port));
+    sdWrite(&SD1, (unsigned char*) "\r\n", 2);
 }
 
 static void ble_command(const char* cmd) {
