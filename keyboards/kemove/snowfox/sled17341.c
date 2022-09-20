@@ -18,6 +18,18 @@ const uint8_t led_map[61] = {
   38,41,42,43,45,44,115,188
 };
 
+static void spi_write(spi_tx_handler handle) {
+    palClearLine(handle.line);
+
+    uint8_t header = handle.frame | SLED_REGS_SANITY | SLED_OPERATION_WRITE;
+    spiStartSend(&SPID1, 1, &header);
+    spiStartSend(&SPID1, 1, &handle.offset);
+    spiStartSend(&SPID1, handle.length, handle.buffer);
+
+    palSetLine(handle.line);
+}
+
+/*
 static void sled_write_reg
 (
   ioline_t line,
@@ -25,22 +37,32 @@ static void sled_write_reg
   uint8_t value
 ) {
   palClearLine(line);
-  uint8_t buffer[3];
-  buffer[0] = page_num | 0x20;
-  buffer[1] = address;
-  buffer[2] = value;
-  spiStartSend(&SPID1, 3, buffer);
+  spiStartSend(&SPID1, 1, page_num | SLED_REGS_SANITY | SLED_OPERATION_WRITE);
+  spiStartSend(&SPID1, 1, &address);
+  spiStartSend(&SPID1, 1, &value);
   palSetLine(line);
+}
+*/
+
+static inline void led_configure(ioline_t line, led_fn_t operation, uint8_t value) {
+    spi_tx_handler handle = {
+        .line = line,
+        .frame = SLED_REGS_FRAME_FUNC,
+        .offset = operation,
+        .length = 1,
+        .buffer = &value};
+    spi_write(handle);
 }
 
 static void setup_led_controller(ioline_t line) {
-  sled_write_reg(line, 0xB, 0xA, 0x0); // Power Down
-  sled_write_reg(line, 0xB, 0x1, 0x8); // Matrix type 2
-  sled_write_reg(line, 0xB, 0xD, 0xE4); // Staggered Delay???
-  sled_write_reg(line, 0xB, 0xE, 0x1); // Slew Rate Enable???
-  sled_write_reg(line, 0xB, 0x14, 0x44); // Vaf Settings
-  sled_write_reg(line, 0xB, 0x15, 0x44); // Vaf Settings (cont.)
-  sled_write_reg(line, 0xB, 0xF, 0x99); // Constant Current Settings (20.5mA)
+  led_configure(line, SLED_SHUTDOWN, SLED_SW_SHUTDOWN);
+  led_configure(line, SLED_PICTURE_DISPLAY, SLED_MATRIX_TYPE_2);
+  led_configure(line, SLED_STAGGERED_DELAY,
+    (0 << SLED_STD1_OFFSET) | (1 << SLED_STD2_OFFSET) | (2 << SLED_STD3_OFFSET) | (3 << SLED_STD4_OFFSET));
+  led_configure(line, SLED_SLEW_RATE, SLED_SLEW_RATE_ENABLE);
+  led_configure(line, SLED_VAF_1, (SLED_VAF_BASELINE << SLED_VAF1_OFFSET) | (SLED_VAF_BASELINE << SLED_VAF2_OFFSET));
+  led_configure(line, SLED_VAF_2, (SLED_VAF_BASELINE << SLED_VAF3_OFFSET) | SLED_FVAF_FTIME_ENABLE);
+  led_configure(line, SLED_CURRENT_CTRL, SLED_CONST_CURRENT_ENABLE | 25); // Constant Current @20.5mA
 }
 
 static uint8_t buffer[0xB6 - 144];
@@ -93,15 +115,15 @@ void sled_update_matrix(void) {
 
 void sled_on(void) {
   chMtxLock(&led_mutex);
-  sled_write_reg(LINE_LED1_CS, 0xB, 0xA, 0x1); // Power Down
-  sled_write_reg(LINE_LED2_CS, 0xB, 0xA, 0x1); // Power Down
+  led_configure(LINE_LED1_CS, SLED_SHUTDOWN, SLED_PWR_NORMAL);
+  led_configure(LINE_LED2_CS, SLED_SHUTDOWN, SLED_PWR_NORMAL);
   chMtxUnlock(&led_mutex);
 }
 
 void sled_off(void) {
   chMtxLock(&led_mutex);
-  sled_write_reg(LINE_LED1_CS, 0xB, 0xA, 0x0); // Power Down
-  sled_write_reg(LINE_LED2_CS, 0xB, 0xA, 0x0); // Power Down
+  led_configure(LINE_LED1_CS, SLED_SHUTDOWN, SLED_SW_SHUTDOWN);
+  led_configure(LINE_LED2_CS, SLED_SHUTDOWN, SLED_SW_SHUTDOWN);
   chMtxUnlock(&led_mutex);
 }
 
