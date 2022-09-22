@@ -6,6 +6,7 @@ enum anne_pro_layers {
   _MAC_LAYER,
   _ARROW_LAYER,
   _FN_LAYER,
+  _END_LAYER,
 };
 
 // This is ROW*MATRIX_COLS + COL

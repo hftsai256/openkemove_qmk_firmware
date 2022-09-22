@@ -1,19 +1,22 @@
-#pragma once
-
 #include <stdint.h>
 #include <hal.h>
 #include "ch.h"
+#include "keycode.h"
+
+#ifndef SLED17341_H
+#define SLED17341_H
+
 
 // SLED17341 Header Byte Definition
-#define SLED_REGS_FRAME_1                (0x0 << 0)
-#define SLED_REGS_FRAME_2                (0x1 << 0)
-#define SLED_REGS_FRAME_FUNC             (0xb << 0)
-#define SLED_REGS_FRAME_DETECT           (0xc << 0)
-#define SLED_REGS_FRAME_LOCATION         (0xd << 0)
-#define SLED_REGS_SANITY                 (0x2 << 4)
+#define SLED_REGS_FRAME_1          (0x0 << 0)
+#define SLED_REGS_FRAME_2          (0x1 << 0)
+#define SLED_REGS_FRAME_FUNC       (0xb << 0)
+#define SLED_REGS_FRAME_DETECT     (0xc << 0)
+#define SLED_REGS_FRAME_LOCATION   (0xd << 0)
+#define SLED_REGS_SANITY           (0x2 << 4)
 
-#define SLED_OPERATION_WRITE             (0x0 << 7)
-#define SLED_OPERATION_READ              (0x1 << 7)
+#define SLED_OPERATION_WRITE       (0x0 << 7)
+#define SLED_OPERATION_READ        (0x1 << 7)
 
 
 // SLED17341 Function Register Value
@@ -48,8 +51,8 @@
 #define SLED_BREATH_ENABLE         0b00010000
 #define SLED_BREATH_CONTINUOUS     0b00100000
 // 0Ah: Shutdown
-#define SLED_SW_SHUTDOWN           0b00000000
-#define SLED_PWR_NORMAL            0b00000001
+#define SLED_POWER_OFF_SW          0b00000000
+#define SLED_POWER_NORMAL          0b00000001
 // 0Bh: AGC (Audio Gain Control)
 #define SLED_AGC_3dB               0b00000001
 #define SLED_AGC_MAX               0b00000111
@@ -79,15 +82,34 @@
 #define SLED_FVAF_DISABLE          0b10000000
 
 
-// SLED17341 Register Offsets
+// LED Wiring Traits
+#define CTRL_SLOTS                 144U
+#define CTRLER_COUNT                 2U
+#define COLOR_R                      0U
+#define COLOR_G                     12U
+#define COLOR_B                     24U
+
+
 typedef union {
-    uint8_t raw[168];
+    uint8_t raw[3];
     struct {
-        uint8_t enable[12];
-        uint8_t blink[12];
-        uint8_t pwm[144];
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
     };
-} __attribute__((packed)) led_ctrl_t;
+} rgb_color_t;
+
+typedef struct {
+    uint8_t h;
+    uint8_t s;
+    uint8_t v;
+} hsv_color_t;
+
+typedef struct {
+    uint8_t enable[CTRL_SLOTS/8];
+    uint8_t blink[CTRL_SLOTS/8];
+    uint8_t pwm[CTRL_SLOTS];
+} led_regs_t;
 
 // SLED17341 Function Register Address
 typedef enum {
@@ -100,7 +122,7 @@ typedef enum {
     SLED_AUDIO_SYNC,
     SLED_RESERVED_01,
     SLED_BREATH_FADE,
-    SLED_BREATH_DELAY,
+    SLED_BREATH_CFG,
     SLED_SHUTDOWN,
     SLED_AGC,
     SLED_AUDIO_ADC_RATE,
@@ -117,7 +139,8 @@ typedef enum {
     SLED_TYPE4_VAF_1,
     SLED_TYPE4_VAF_2,
     SLED_TYPE4_VAF_3,
-    SLED_CHIP_ID
+    SLED_CHIP_ID,
+    SLED_SAFE
 } led_fn_t;
 
 typedef struct {
@@ -126,37 +149,34 @@ typedef struct {
     uint8_t offset;
     uint8_t length;
     uint8_t* buffer;
-} spi_tx_handler;
+} sled_spiio_t;
 
+typedef struct {
+    uint8_t ind;
+    uint8_t ctrler;
+    uint8_t byte;
+    uint8_t bit;
+} sled_pos_t;
 
-extern mutex_t led_mutex;
-extern uint8_t led_matrix[288];
+typedef struct {
+    uint8_t caps_lock;
+    uint8_t scrl_lock;
+    uint8_t num_lock;
+    uint8_t ble_ports[3];
+} led_status_ind_t;
 
-extern const uint8_t led_map[61];
+extern const uint8_t keypos_led_map[MATRIX_ROWS][MATRIX_COLS];
+extern const led_status_ind_t status_indicator;
 
-typedef struct RgbColor
-{
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-} RgbColor;
-
-typedef struct HsvColor
-{
-    unsigned char h;
-    unsigned char s;
-    unsigned char v;
-} HsvColor;
-
+void sled_apply(void);
+void sled_set_cache_color(uint8_t led_base_index, rgb_color_t rgb);
+void sled_set_cache_blink(uint8_t led_base_index, bool enable);
+void sled_cache_init(void);
 void sled_early_init(void);
 void sled_init(void);
-void sled_update_matrix(void);
 void sled_on(void);
 void sled_off(void);
-static void sled_set_color(uint8_t key, uint8_t r, uint8_t g, uint8_t b) {
-    led_matrix[led_map[key]] = r;
-    led_matrix[led_map[key]+12] = g;
-    led_matrix[led_map[key]+24] = b;
-}
 
-RgbColor HsvToRgb(HsvColor hsv);
+rgb_color_t hsv_to_rgb(hsv_color_t hsv);
+
+#endif // SLED17341_H

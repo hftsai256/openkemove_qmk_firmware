@@ -25,23 +25,27 @@ typedef struct {
 // ========= BEGIN PROFILES =========
 
 void led_profile_cycle_update(void) {
-    static HsvColor currentColor = {.h = 0, .s = 0xFF, .v = 0xFF};
+    static hsv_color_t currentColor = {.h = 0, .s = 0xFF, .v = 0xFF};
     currentColor.h += 1;
     currentColor.v = led_brightness;
-    RgbColor rgb = HsvToRgb(currentColor);
-    for (int i = 0; i < 61; ++i)
-    {
-        sled_set_color(i, rgb.r, rgb.g, rgb.b);
+    rgb_color_t rgb = hsv_to_rgb(currentColor);
+
+    for (uint8_t i=0; i<MATRIX_ROWS; i++) {
+        for (uint8_t j=0; j<MATRIX_COLS; j++) {
+            sled_set_cache_color(keypos_led_map[i][j], rgb);
+        }
     }
 }
 
 void led_profile_static_update(void) {
-    static HsvColor currentColor = {.h = 0, .s = 0x00, .v = 0xFF};
-    RgbColor rgb = HsvToRgb(currentColor);
+    static hsv_color_t currentColor = {.h = 0, .s = 0x00, .v = 0xFF};
+    rgb_color_t rgb = hsv_to_rgb(currentColor);
     currentColor.v = led_brightness;
-    for (int i = 0; i < 61; ++i)
-    {
-        sled_set_color(i, rgb.r, rgb.g, rgb.b);
+
+    for (uint8_t i=0; i<MATRIX_ROWS; i++) {
+        for (uint8_t j=0; j<MATRIX_COLS; j++) {
+            sled_set_cache_color(keypos_led_map[i][j], rgb);
+        }
     }
 }
 
@@ -56,6 +60,35 @@ static uint8_t current_profile = 0;
 const uint8_t num_profiles = sizeof(led_profiles) / sizeof(led_profiles[0]);
 static bool led_active = false;
 
+void static usb_led_relay(void) {
+    led_t led_state = host_keyboard_led_state();
+    rgb_color_t color_on = {
+            .r = (uint16_t)led_brightness * 255 / 255,
+            .g = (uint16_t)led_brightness * 150 / 255,
+            .b = (uint16_t)led_brightness * 0
+    };
+    rgb_color_t color_off = {0};
+
+    if (led_state.num_lock) {
+        sled_set_cache_color(status_indicator.num_lock, color_on);
+    } else if (!led_active) {
+        sled_set_cache_color(status_indicator.num_lock, color_off);
+    }
+
+    if (led_state.caps_lock) {
+        sled_set_cache_color(status_indicator.caps_lock, color_on);
+    } else if (!led_active) {
+        sled_set_cache_color(status_indicator.caps_lock, color_off);
+    }
+
+    if (led_state.scroll_lock) {
+        sled_set_cache_color(status_indicator.scrl_lock, color_on);
+    } else if (!led_active) {
+        sled_set_cache_color(status_indicator.scrl_lock, color_off);
+    }
+}
+
+
 void snowfox_early_led_init(void) {
     sled_early_init();
     chMtxObjectInit(&led_profile_mutex);
@@ -66,14 +99,16 @@ THD_FUNCTION(LEDThread, arg) {
     (void)arg;
     chRegSetThreadName("LEDThread");
     sled_init();
-    sled_off();
     while(1) {
         chThdSleepMilliseconds(50);
-        chMtxLock(&led_profile_mutex); // Begin Critical Section
-        led_udpate_cb_t updateFn = led_profiles[current_profile].update;
-        chMtxUnlock(&led_profile_mutex); // End Critical Section
-        (*updateFn)();
-        sled_update_matrix();
+
+        if (led_active) {
+            led_udpate_cb_t updateFn = led_profiles[current_profile].update;
+            (*updateFn)();
+        }
+
+        usb_led_relay();
+        sled_apply();
     }
 }
 
@@ -103,12 +138,12 @@ void snowfox_led_on(void) {
     if (led_active) {
         snowfox_led_next();
     } else {
-        sled_on();
         led_active = true;
     }
 }
 
 void snowfox_led_off(void) {
-    sled_off();
+    sled_cache_init();
+    sled_apply();
     led_active = false;
 }
