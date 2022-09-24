@@ -121,14 +121,14 @@ static void snowfox_ble_reset() {
     sdStop(&SD1);
     serialCfg.speed=115200;
     sdStart(&SD1, &serialCfg);
+
+    chThdSleepMilliseconds(50);
 }
 
 static void snowfox_ble_update_name() {
-    unsigned char keyboard_port = ble_handle.keyboard + '0' + 1;
-
-    sdWrite(&SD1, (unsigned char*) "AT+NAME=SnowfoxQMK", 18);
-    sdWrite(&SD1, &keyboard_port, sizeof(keyboard_port));
-    sdWrite(&SD1, (unsigned char*) "\r\n", 2);
+    char buffer[24];
+    sprintf(buffer, "AT+NAME=SnowfoxQMK:%d", ble_handle.keyboard+1);
+    ble_command_wait(buffer, 100);
 }
 
 static void ble_command(const char* cmd) {
@@ -173,7 +173,6 @@ static void update_event(uint8_t flag) {
 
         case BLE_EVENT_CONNECTED:
             ble_handle.state = CONNECTED;
-            sdWrite(&SD1, (uint8_t*)"connected\r\n", 16);
             snowfox_ble_swtich_ble_driver();
             break;
 
@@ -200,11 +199,13 @@ static void process_response(char* buffer) {
         switch_led_page((uint8_t) strtol(buffer+9, NULL, 16));
     }
 
+    else if (strncmp("+KEYBOARD:", buffer, 10) == 0) {
+        ble_handle.keyboard = strtol(buffer+10, NULL, 10) - 1;
+        snowfox_ble_update_name();
+    }
+
     else if (strncmp("+EVENT:", buffer, 7) == 0) {
         update_event((uint8_t) strtol(buffer+7, NULL, 16));
-        char debuf[16];
-        sprintf(debuf, "ev: %d\n", (uint8_t) strtol(buffer+7, NULL, 16));
-        sdWrite(&SD1, (uint8_t*) debuf, 16);
     }
 }
 
@@ -238,8 +239,8 @@ THD_FUNCTION(BLEThread, arg) {
     chRegSetThreadName("BLEThread");
 
     snowfox_ble_reset();
-    ble_command_wait("AT+KEYBOARD?\r\n", 100);
-    ble_command_wait("AT+DISCONN\r\n", 100);
+    ble_command("AT+DISCONN\r\n");
+    ble_command("AT+KEYBOARD?\r\n");
 
     while(1) {
         uint8_t length = read_uart_msg(uart_rx_buffer);

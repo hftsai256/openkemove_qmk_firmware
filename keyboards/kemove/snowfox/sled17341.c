@@ -98,8 +98,8 @@ static sled_pos_t sled_matrix_pos(uint8_t led_ind) {
     sled_pos_t ret = {0};
     ret.ind = led_ind % CTRL_SLOTS;
     ret.ctrler = led_ind / CTRL_SLOTS;
-    ret.bit = led_ind % 8;
-    ret.byte = led_ind / 8;
+    ret.bit = ret.ind % 8;
+    ret.byte = ret.ind / 8;
 
     return ret;
 }

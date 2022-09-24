@@ -17,10 +17,6 @@ static mutex_t led_profile_mutex;
 
 typedef rgb_color_t (*led_update_fn)(uint8_t);
 
-typedef struct {
-    led_update_fn colormap;
-} led_profile_t;
-
 // ========= BEGIN PROFILES =========
 
 static rgb_color_t led_profile_cycle_colormap(uint8_t ind) {
@@ -57,12 +53,12 @@ static rgb_color_t led_profile_cyan_colormap(uint8_t ind) {
 
 // ========= END PROFILES ===========
 
-const led_profile_t led_profiles[] = {
-    {led_profile_cycle_colormap},
-    {led_profile_white_colormap},
-    {led_profile_green_colormap},
-    {led_profile_yellow_colormap},
-    {led_profile_cyan_colormap},
+const led_update_fn led_profiles[] = {
+    led_profile_cycle_colormap,
+    led_profile_white_colormap,
+    led_profile_green_colormap,
+    led_profile_yellow_colormap,
+    led_profile_cyan_colormap,
 };
 
 static uint8_t current_profile = 0;
@@ -174,7 +170,7 @@ THD_FUNCTION(LEDThread, arg) {
         chThdSleepMilliseconds(ANIME_PERIOD);
 
         if (led_active) {
-            led_update_fn colormap = led_profiles[current_profile].colormap;
+            led_update_fn colormap = led_profiles[current_profile];
 
             for (uint8_t i=0; i<MATRIX_ROWS; i++) {
                 for (uint8_t j=0; j<MATRIX_COLS; j++) {
