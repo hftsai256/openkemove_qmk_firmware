@@ -30,6 +30,10 @@
 
 #define ENABLE_SLEEP_LED    TRUE
 
+// Physical keyboard size
+#define PHY_ROWS  5
+#define PHY_COLS 14
+
 // key matrix size
 #define MATRIX_ROWS 8
 #define MATRIX_COLS 9

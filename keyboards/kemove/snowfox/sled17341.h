@@ -140,14 +140,31 @@ typedef enum {
     SLED_TYPE4_VAF_2,
     SLED_TYPE4_VAF_3,
     SLED_CHIP_ID,
-    SLED_SAFE
-} led_fn_t;
+    SLED_FN_COUNT
+} sled_fn_t;
+
+typedef enum {
+    SLED_STATUS_CONF_NUM_LOCK,
+    SLED_STATUS_CONF_CAPS_LOCK,
+    SLED_STATUS_CONF_SCROLL_LOCK,
+    SLED_STATUS_CONF_BLE1,
+    SLED_STATUS_CONF_BLE2,
+    SLED_STATUS_CONF_BLE3,
+    SLED_STATUS_CONF_SIZE
+} sled_status_t;
+
+typedef struct {
+    uint8_t     pos;
+    bool        enable;
+    bool        blink;
+    rgb_color_t rgb;
+} sled_status_conf_t;
 
 typedef struct {
     ioline_t line;
-    uint8_t frame;
-    uint8_t offset;
-    uint8_t length;
+    uint8_t  frame;
+    uint8_t  offset;
+    uint8_t  length;
     uint8_t* buffer;
 } sled_spiio_t;
 
@@ -158,15 +175,9 @@ typedef struct {
     uint8_t bit;
 } sled_pos_t;
 
-typedef struct {
-    uint8_t caps_lock;
-    uint8_t scrl_lock;
-    uint8_t num_lock;
-    uint8_t ble_ports[3];
-} led_status_ind_t;
-
 extern const uint8_t keypos_led_map[MATRIX_ROWS][MATRIX_COLS];
-extern const led_status_ind_t status_indicator;
+extern const uint8_t ledpos_phy_map[PHY_ROWS][PHY_COLS];
+extern sled_status_conf_t status_conf[SLED_STATUS_CONF_SIZE];
 
 void sled_apply(void);
 void sled_set_cache_color(uint8_t led_base_index, rgb_color_t rgb);

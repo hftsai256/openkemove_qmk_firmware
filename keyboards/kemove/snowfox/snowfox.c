@@ -82,13 +82,13 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 snowfox_ble_disconnect();
                 return false;
             case SNOWFOX_BLE_KB1:
-                snowfox_ble_select(KEYBOARD1);
+                snowfox_ble_select(BLE_KEYBOARD1);
                 return false;
             case SNOWFOX_BLE_KB2:
-                snowfox_ble_select(KEYBOARD2);
+                snowfox_ble_select(BLE_KEYBOARD2);
                 return false;
             case SNOWFOX_BLE_KB3:
-                snowfox_ble_select(KEYBOARD3);
+                snowfox_ble_select(BLE_KEYBOARD3);
                 return false;
             default:
                 break;

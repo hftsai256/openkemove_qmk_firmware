@@ -51,7 +51,7 @@ static host_driver_t snowfox_ble_driver = {
 
 ble_handle_t ble_handle = {
     .state = OFF,
-    .keyboard = UNKNOWN,
+    .keyboard = BLE_KEYBOARD1,
     .led_page = 0,
 
     /* chibios-driver is not assigned until the usersapce initialization has finished.
@@ -124,7 +124,7 @@ static void snowfox_ble_reset() {
 }
 
 static void snowfox_ble_update_name() {
-    unsigned char keyboard_port = ble_handle.keyboard + '0';
+    unsigned char keyboard_port = ble_handle.keyboard + '0' + 1;
 
     sdWrite(&SD1, (unsigned char*) "AT+NAME=SnowfoxQMK", 18);
     sdWrite(&SD1, &keyboard_port, sizeof(keyboard_port));
@@ -159,6 +159,8 @@ static void switch_led_page(uint8_t page) {
     }
 }
 
+void ble_update_kb(ble_handle_t);
+
 static void update_event(uint8_t flag) {
     switch (flag){
         case BLE_EVENT_POST:
@@ -171,6 +173,7 @@ static void update_event(uint8_t flag) {
 
         case BLE_EVENT_CONNECTED:
             ble_handle.state = CONNECTED;
+            sdWrite(&SD1, (uint8_t*)"connected\r\n", 16);
             snowfox_ble_swtich_ble_driver();
             break;
 
@@ -185,6 +188,7 @@ static void update_event(uint8_t flag) {
 
         default:
     }
+    ble_update_kb(ble_handle);
 }
 
 static void process_response(char* buffer) {
@@ -193,16 +197,14 @@ static void process_response(char* buffer) {
     }
 
     else if (strncmp("+LEDPAGE:", buffer, 9) == 0) {
-        switch_led_page(buffer[9] - (uint8_t)'0');
-    }
-
-    else if (strncmp("+KEYBOARD:", buffer, 10) == 0) {
-        ble_handle.keyboard = buffer[10] - '0';
-        snowfox_ble_update_name();
+        switch_led_page((uint8_t) strtol(buffer+9, NULL, 16));
     }
 
     else if (strncmp("+EVENT:", buffer, 7) == 0) {
         update_event((uint8_t) strtol(buffer+7, NULL, 16));
+        char debuf[16];
+        sprintf(debuf, "ev: %d\n", (uint8_t) strtol(buffer+7, NULL, 16));
+        sdWrite(&SD1, (uint8_t*) debuf, 16);
     }
 }
 
@@ -213,7 +215,7 @@ static uint8_t read_uart_msg() {
     uint8_t length = 0;
 
     while(p_write < p_end - 1) {
-        msg_t raw = sdGetTimeout(&SD1, TIME_MS2I(10));
+        msg_t raw = sdGetTimeout(&SD1, TIME_MS2I(100));
 
         if (raw == MSG_TIMEOUT || raw == MSG_RESET || raw == '\r' || raw == '\n') {
             break;
@@ -249,15 +251,15 @@ THD_FUNCTION(BLEThread, arg) {
 }
 
 /* -------------------- Public Function Implementation ---------------------- */
-void snowfox_ble_select(BLEKeyboard port) {
+void snowfox_ble_select(ble_keyboard_t port) {
     switch (port) {
-        case KEYBOARD1:
+        case BLE_KEYBOARD1:
             ble_command_wait("AT+KEYBOARD=1\r\n", 100);
             break;
-        case KEYBOARD2:
+        case BLE_KEYBOARD2:
             ble_command_wait("AT+KEYBOARD=2\r\n", 100);
             break;
-        case KEYBOARD3:
+        case BLE_KEYBOARD3:
             ble_command_wait("AT+KEYBOARD=3\r\n", 100);
             break;
         default:

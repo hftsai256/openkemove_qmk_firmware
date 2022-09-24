@@ -8,11 +8,40 @@
 
 led_regs_t led_memcache[CTRLER_COUNT] = {0};
 
-const led_status_ind_t status_indicator = {
-    .caps_lock = 81,
-    .num_lock = KC_NO,
-    .scrl_lock = 155,
-    .ble_ports = {116, 119, 146}
+sled_status_conf_t status_conf[SLED_STATUS_CONF_SIZE] = {
+    [SLED_STATUS_CONF_NUM_LOCK] = {
+        .pos = KC_NO
+    },
+    [SLED_STATUS_CONF_CAPS_LOCK] = {
+        .pos = 81,
+        .enable = false,
+        .blink = false,
+        .rgb = {.r = 255, .g = 0, .b = 0},
+    },
+    [SLED_STATUS_CONF_SCROLL_LOCK] = {
+        .pos = 155,
+        .enable = false,
+        .blink = false,
+        .rgb = {.r = 255, .g = 0, .b = 0},
+    },
+    [SLED_STATUS_CONF_BLE1] = {
+        .pos = 116,
+        .enable = false,
+        .blink = false,
+        .rgb = {.r = 255, .g = 0, .b = 255},
+    },
+    [SLED_STATUS_CONF_BLE2] = {
+        .pos = 119,
+        .enable = false,
+        .blink = false,
+        .rgb = {.r = 255, .g = 0, .b = 255},
+    },
+    [SLED_STATUS_CONF_BLE3] = {
+        .pos = 146,
+        .enable = false,
+        .blink = false,
+        .rgb = {.r = 255, .g = 0, .b = 255},
+    }
 };
 
 const ioline_t led_spi_lines[CTRLER_COUNT] = {LINE_LED1_CS, LINE_LED2_CS};
@@ -24,6 +53,14 @@ const uint8_t keypos_led_map[MATRIX_ROWS][MATRIX_COLS] = KEYMAP(
    114, 116, 119, 146, 147, 148, 149, 150, 186, 191, 216,      187,
     38,  41,  42,            43,                 45,  44,   115,    188
 );
+
+const uint8_t ledpos_phy_map[PHY_ROWS][PHY_COLS] = {
+    {    2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  36,  37, 189, 190},
+    {   46,  47,  72,  73,  74,  75,  76,  77,  80, 151, 152, 153, 185, 154},
+    {   81,  82,  83, 108, 109, 110, 111, 112, 113, 182, 155, 181, 180, 180},
+    {  114, 114, 116, 119, 146, 147, 148, 149, 150, 186, 191, 216, 187, 187},
+    {   38,  41,  42,  43,  43,  43,  43,  43,  43,  43,  45,  44, 115, 188}
+};
 
 static void spi_write(sled_spiio_t handle) {
     palClearLine(handle.line);
@@ -47,7 +84,7 @@ static void spi_read(sled_spiio_t handle) {
     palSetLine(handle.line);
 }
 
-static inline void sled_configure(ioline_t line, led_fn_t operation, uint8_t value) {
+static inline void sled_configure(ioline_t line, sled_fn_t operation, uint8_t value) {
     sled_spiio_t handle = {
         .line = line,
         .frame = SLED_REGS_FRAME_FUNC,
@@ -68,14 +105,11 @@ static sled_pos_t sled_matrix_pos(uint8_t led_ind) {
 }
 
 static uint8_t sled_find_index(uint16_t keycode) {
-    keypos_t pos = {0};
     for (uint8_t p=0; p < CTRLER_COUNT; p++) {
         for (uint8_t r=0; r < MATRIX_ROWS; r++) {
             for (uint8_t c=0; c < MATRIX_COLS; c++) {
                 if (keymaps[p][r][c] == keycode) {
-                    pos.row = r;
-                    pos.col = c;
-                    return keypos_led_map[pos.row][pos.col];
+                    return keypos_led_map[r][c];
                 }
             }
         }
@@ -88,15 +122,20 @@ static void sled_ctrl_init(void) {
         sled_configure(led_spi_lines[cs], SLED_SHUTDOWN, SLED_POWER_OFF_SW);
         sled_configure(led_spi_lines[cs], SLED_PICTURE_DISPLAY, SLED_MATRIX_TYPE_2);
 
+        sled_configure(led_spi_lines[cs], SLED_DISPLAY_OPTION,
+            SLED_BLINK_ACTIVE_MAX |
+            SLED_BLINK_ENABLE |
+            SLED_BLINK_FRAME_75);
+
         // Constant current control: value * 0.5 + 8 mA
         sled_configure(led_spi_lines[cs], SLED_CURRENT_CTRL, SLED_CONST_CURRENT_ENABLE | 25);
-
+/*
         sled_configure(led_spi_lines[cs], SLED_STAGGERED_DELAY,
             (0 << SLED_STD1_OFFSET) |
             (1 << SLED_STD2_OFFSET) |
             (2 << SLED_STD3_OFFSET) |
             (3 << SLED_STD4_OFFSET));
-
+*/
         sled_configure(led_spi_lines[cs], SLED_SLEW_RATE, SLED_SLEW_RATE_ENABLE);
 
         sled_configure(led_spi_lines[cs], SLED_VAF_1,
@@ -176,7 +215,6 @@ void sled_early_init(void) {}
 void sled_init(void) {
   sled_ctrl_init();
   sled_cache_init();
-  //sled_find_indicator();
   sled_on();
 }
 
