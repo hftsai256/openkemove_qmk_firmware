@@ -15,6 +15,7 @@
 */
 
 #include "snowfox_ble.h"
+#include "snowfox_led.h"
 #include "ch.h"
 #include "hal.h"
 #include "host.h"
@@ -126,9 +127,9 @@ static void snowfox_ble_reset() {
 }
 
 static void snowfox_ble_update_name() {
-    char buffer[24];
-    sprintf(buffer, "AT+NAME=SnowfoxQMK:%d", ble_handle.keyboard+1);
-    ble_command_wait(buffer, 100);
+    char buffer[24] = "AT+NAME=SnowfoxQMK:?\r\n";
+    buffer[19] = ble_handle.keyboard + 1 + '0';
+    ble_command(buffer);
 }
 
 static void ble_command(const char* cmd) {
@@ -159,8 +160,6 @@ static void switch_led_page(uint8_t page) {
     }
 }
 
-void ble_update_kb(ble_handle_t);
-
 static void update_event(uint8_t flag) {
     switch (flag){
         case BLE_EVENT_POST:
@@ -187,7 +186,7 @@ static void update_event(uint8_t flag) {
 
         default:
     }
-    ble_update_kb(ble_handle);
+    ble_update_kb(&ble_handle);
 }
 
 static void process_response(char* buffer) {
@@ -239,8 +238,8 @@ THD_FUNCTION(BLEThread, arg) {
     chRegSetThreadName("BLEThread");
 
     snowfox_ble_reset();
-    ble_command("AT+DISCONN\r\n");
     ble_command("AT+KEYBOARD?\r\n");
+    ble_command("AT+DISCONN\r\n");
 
     while(1) {
         uint8_t length = read_uart_msg(uart_rx_buffer);

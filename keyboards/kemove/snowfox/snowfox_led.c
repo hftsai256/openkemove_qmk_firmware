@@ -1,5 +1,8 @@
 #include "snowfox.h"
+#include "snowfox_led.h"
 #include "snowfox_ble.h"
+#include "printf.h"
+#include <string.h>
 
 #define ANIME_PERIOD      50
 
@@ -115,14 +118,15 @@ static sled_status_conf_t* ble_sled_getconf(ble_keyboard_t kb) {
     }
 }
 
-void ble_update_kb(ble_handle_t ble_state) {
-    sled_status_conf_t *active = ble_sled_getconf(ble_state.keyboard);
+bool ble_update_kb(ble_handle_t* ble_state) {
+    sled_status_conf_t *active = ble_sled_getconf(ble_state->keyboard);
     sled_status_conf_t *sweeper;
 
     for (ble_keyboard_t kb=BLE_KEYBOARD1; kb < BLE_KEYBOARD_SIZE; kb++) {
         sweeper = ble_sled_getconf(kb);
+
         if (sweeper == active) {
-            switch (ble_state.state) {
+            switch (ble_state->state) {
                 case DISCOVERING:
                     sled_ble_discover(sweeper);
                     break;
@@ -139,6 +143,8 @@ void ble_update_kb(ble_handle_t ble_state) {
             sled_ble_clear(sweeper);
         }
     }
+
+    return true;
 }
 
 void static status_led_relay(void) {

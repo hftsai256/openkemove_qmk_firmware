@@ -1,4 +1,5 @@
 #include "snowfox.h"
+#include "snowfox_led.h"
 #include "snowfox_ble.h"
 #include "string.h"
 
