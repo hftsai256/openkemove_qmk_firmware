@@ -17,43 +17,31 @@
 
 #pragma once
 
-#define KEMOVE_SNOWFOX
+#define LINE_WINMAC         PAL_LINE(IOPORT0, 20) // 3.3v (left) pin
 
 #define ENABLE_SLEEP_LED    TRUE
+#define MAX_LAYERS          5
+#define DIP_SWITCH_PINS     { LINE_WINMAC }
 
-// key matrix size
-#define MATRIX_ROWS 8
-#define MATRIX_COLS 9
-// layer size: MATRIX_ROWS * MATRIX_COLS * sizeof(uint16_t) = 144 bytes
-
-// Max available layers
-#define MAX_LAYERS 8
-// keymaps size: layer size * MAX_LAYERS = 1152 bytes
-
-#define KEYMAP_60_ANSI
-
-// Matrix keymap
-#define DIP_SWITCH_PINS { LINE_WINMAC }
-
-#define LAYOUT KEYMAP
-
-#define KEYMAP( \
-    K00, K01, K02, K03, K04, K05, K06, K07, K08, K09, K0A, K0B, K0C, K0D, \
-    K10, K11, K12, K13, K14, K15, K16, K17, K18, K19, K1A, K1B, K1C, K1D, \
-    K20, K21, K22, K23, K24, K25, K26, K27, K28, K29, K2A, K2B, K2C,      \
-    K30,      K31, K32, K33, K34, K35, K36, K37, K38, K39, K3A, K3B,      \
-    K40, K41, K42,                K43,           K44,  K45,   K46,   K47  \
-) { \
-    /*            COL1   COL2   COL3   COL4   COL5   COL6   COL7   COL8   COL9 */  \
-    /* ROW1  */ { K00,   K01,   K02,   K03,   K04,   K05,   K06,   K07,   K08,  }, \
-    /* ROW2  */ { K10,   K11,   K12,   K13,   K14,   K15,   K16,   K17,   K18,  }, \
-    /* ROW3  */ { K20,   K21,   K22,   K23,   K24,   K25,   K26,   K27,   K28,  }, \
-    /* ROW4  */ { K30,   KC_NO, K31,   K32,   K33,   K34,   K35,   K36,   K37,  }, \
-    /* ROW5  */ { K40,   KC_NO, K41,   K39,   K3A,   K42,   KC_NO, K46,   KC_NO,}, \
-    /* ROW6  */ { K09,   K0A,   K0B,   K0C,   K0D,   KC_NO, K43,   K45,   K44,  }, \
-    /* ROW7  */ { K19,   K1A,   K1B,   K1D,   K2A,   KC_NO, KC_NO, K47,   KC_NO,}, \
-    /* ROW8  */ { K2B,   K29,   K1C,   K38,   K3B,   KC_NO, KC_NO, K2C,   KC_NO,}, \
+/*
+#define KEYMAP( 
+    K00, K01, K02, K03, K04, K05, K06, K07, K08, K09, K0A, K0B, K0C, K0D, 
+    K10, K11, K12, K13, K14, K15, K16, K17, K18, K19, K1A, K1B, K1C, K1D, 
+    K20, K21, K22, K23, K24, K25, K26, K27, K28, K29, K2A, K2B, K2C,      
+    K30,      K31, K32, K33, K34, K35, K36, K37, K38, K39, K3A, K3B,      
+    K40, K41, K42,                K43,           K44,  K45,   K46,   K47  
+) { 
+             COL0   COL1   COL2   COL3   COL4   COL5   COL6   COL7   COL8     
+     ROW0   { K00,   K01,   K02,   K03,   K04,   K05,   K06,   K07,   K08,  },
+     ROW1   { K10,   K11,   K12,   K13,   K14,   K15,   K16,   K17,   K18,  },
+     ROW2   { K20,   K21,   K22,   K23,   K24,   K25,   K26,   K27,   K28,  },
+     ROW3   { K30,   KC_NO, K31,   K32,   K33,   K34,   K35,   K36,   K37,  },
+     ROW4   { K40,   KC_NO, K41,   K39,   K3A,   K42,   KC_NO, K46,   KC_NO,},
+     ROW5   { K09,   K0A,   K0B,   K0C,   K0D,   KC_NO, K43,   K45,   K44,  },
+     ROW6   { K19,   K1A,   K1B,   K1D,   K2A,   KC_NO, KC_NO, K47,   KC_NO,},
+     ROW7   { K2B,   K29,   K1C,   K38,   K3B,   KC_NO, KC_NO, K2C,   KC_NO,},
 }
+*/
 
 /* Debounce reduces chatter (unintended double-presses) - set 0 if debouncing is not needed */
 #define DEBOUNCE 5
@@ -156,7 +144,7 @@
 // #define NO_DEBUG
 
 /* disable print */
-// #define NO_PRINTg
+// #define NO_PRINT
 
 /* disable action features */
 //#define NO_ACTION_LAYER

@@ -9,21 +9,18 @@ SerialConfig serialCfg = {
     9600
 };
 
-void dip_switch_init_kb(void){}
-
-void matrix_scan_kb(void) {
-    matrix_scan_user();
-}
-
-__attribute__((weak)) bool dip_switch_update_user(uint8_t idx, bool active) {
-    return true;
-}
-
 bool dip_switch_update_kb(uint8_t index, bool active) {
-    return dip_switch_update_user(index, active);
+if (!dip_switch_update_user(index, active)) { return false; }
+  switch (index) {
+    case 0:
+      // v1.5: DIP on = Windows Layer, DIP off = Mac Layer
+      default_layer_set(1UL << (active ? 0 : 1));
+      break;
+  }
+  return true;
 }
 
-void snowfox_early_init(void) {
+void board_init(void) {
     snowfox_early_led_init();
 }
 
@@ -98,3 +95,4 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     }
     return process_record_user(keycode, record);
 }
+

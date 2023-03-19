@@ -40,5 +40,4 @@
 
 #define LPC_SERIAL_USE_UART1                        TRUE
 
-
 #endif /* _MCUCONF_H_ */
