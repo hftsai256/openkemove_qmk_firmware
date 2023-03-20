@@ -57,6 +57,7 @@ const uint8_t num_profiles = sizeof(led_profiles) / sizeof(led_profiles[0]);
 static bool led_active = false;
 
 void snowfox_early_led_init(void) {
+    spiStart(&SPID1, &spi1Config);  
     sled_early_init();
     chMtxObjectInit(&led_profile_mutex);
 }

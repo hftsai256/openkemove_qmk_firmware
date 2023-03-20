@@ -17,11 +17,9 @@
 
 #pragma once
 
-#define LINE_WINMAC         PAL_LINE(IOPORT0, 20) // 3.3v (left) pin
-
 #define ENABLE_SLEEP_LED    TRUE
 #define MAX_LAYERS          5
-#define DIP_SWITCH_PINS     { LINE_WINMAC }
+#define DIP_SWITCH_PINS     { LINE_DIP0 }
 
 /*
 #define KEYMAP( 

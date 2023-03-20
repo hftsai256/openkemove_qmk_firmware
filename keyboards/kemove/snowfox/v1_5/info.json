@@ -5,7 +5,7 @@
     "bootloader": "custom",
     "diode_direction": "COL2ROW",
     "processor": "cortex-m0",
-    "board": "LPC11U35_TURING61",
+    "board": "LPC11U35_GENERIC",
     "url": "",
     "usb": {
         "vid": "0x1209",
