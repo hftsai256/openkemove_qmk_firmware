@@ -3,7 +3,7 @@
     "manufacturer": "Kemove",
     "maintainer": "Halley Tsai",
     "bootloader": "custom",
-    "diode_direction": "COL2ROW",
+    "diode_direction": "ROW2COL",
     "processor": "cortex-m0",
     "board": "LPC11U35_GENERIC",
     "url": "",
