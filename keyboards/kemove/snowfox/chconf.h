@@ -20,5 +20,14 @@
 
 #pragma once
 
+#define CH_CFG_ST_FREQUENCY                  1000
+#define CH_CFG_ST_TIMEDELTA                     0
+
+#define CH_CFG_TIME_QUANTUM                    20
+
+#define CH_CFG_USE_TM                       FALSE
+
+#define CH_HT32_WAIT_US_POLL                 TRUE
+
 #include_next <chconf.h>
 
