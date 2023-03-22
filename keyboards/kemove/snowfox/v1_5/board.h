@@ -12,3 +12,5 @@
 #define LINE_UART_TX                                    PAL_LINE(IOPORT1, 27) // To pin 20 on BLE
 #define LINE_BLE_RSTN                                   PAL_LINE(IOPORT0, 23) // To pin 11 on BLE
 
+#define LINE_ADC_BAT                                    PAL_LINE(IOPORT0, 15) // To Battery
+                                                                              //
