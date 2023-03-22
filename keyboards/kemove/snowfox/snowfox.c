@@ -1,16 +1,15 @@
 #include "snowfox.h"
 #include "print.h"
-//#include "snowfox_ble.h"
-//#include "string.h"
+#include "snowfox_ble.h"
+#include "string.h"
 
-/*
 thread_t *led_thread = NULL;
 thread_t *ble_thread = NULL;
 
 SerialConfig serialCfg = {
     9600
 };
-*/
+
 bool dip_switch_update_kb(uint8_t index, bool active) {
 if (!dip_switch_update_user(index, active)) { return false; }
   switch (index) {
@@ -21,12 +20,12 @@ if (!dip_switch_update_user(index, active)) { return false; }
   }
   return true;
 }
-/*
+
 void matrix_init_kb(void) {
-    //led_thread = chThdCreateStatic(waLEDThread, sizeof(waLEDThread), NORMALPRIO, LEDThread, NULL);
-    //ble_thread = chThdCreateStatic(waBLEThread, sizeof(waBLEThread), NORMALPRIO, BLEThread, NULL);
+    snowfox_early_led_init();
+    led_thread = chThdCreateStatic(waLEDThread, sizeof(waLEDThread), NORMALPRIO, LEDThread, NULL);
+    ble_thread = chThdCreateStatic(waBLEThread, sizeof(waBLEThread), NORMALPRIO, BLEThread, NULL);
 }
-*/
 
 void bootloader_jump(void) {
     *((volatile uint32_t*) 0x100001F0) = 0xDEADBEEF;
@@ -47,7 +46,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 /*!
  * @returns false   processing for this keycode has been completed.
  */
-/*
 bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
         switch (keycode) {
@@ -102,4 +100,4 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     }
     return process_record_user(keycode, record);
 }
-*/
+

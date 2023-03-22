@@ -1,3 +1,4 @@
+#include "print.h"
 #include "snowfox.h"
 #include "snowfox_ble.h"
 
@@ -57,7 +58,10 @@ const uint8_t num_profiles = sizeof(led_profiles) / sizeof(led_profiles[0]);
 static bool led_active = false;
 
 void snowfox_early_led_init(void) {
-    spiStart(&SPID1, &spi1Config);  
+    palSetLine(LINE_LED1_CS);
+    palSetLine(LINE_LED2_CS);
+    spiStart(&SPID1, &spi1Config);
+
     sled_early_init();
     chMtxObjectInit(&led_profile_mutex);
 }
@@ -101,6 +105,9 @@ void suspend_wakeup_init_kb(void) {
 }
 
 void snowfox_led_on(void) {
+#ifdef CONSOLE_ENABLE
+    uprintf("LED on\n");
+#endif 
     if (led_active) {
         snowfox_led_next();
     } else {
@@ -110,6 +117,9 @@ void snowfox_led_on(void) {
 }
 
 void snowfox_led_off(void) {
+#ifdef CONSOLE_ENABLE
+    uprintf("LED off\n");
+#endif 
     sled_off();
     led_active = false;
 }
