@@ -23,11 +23,11 @@
 #define BLE_UART_BUFFER_SIZE   32U
 #define BLE_HID_REPORT_SIZE    16U // Including null terminator
 
-#define BLE_EVENT_POST         0x01
-#define BLE_EVENT_DISCOVER     0x02
-#define BLE_EVENT_CONNECTED    0x04
-#define BLE_EVENT_DROP         0x08
-#define BLE_EVENT_CONNECTING   0x40
+#define BLE_EVENT_POST         0x0001
+#define BLE_EVENT_DISCOVER     0x0002
+#define BLE_EVENT_CONNECTED    0x0004
+#define BLE_EVENT_DROP         0x0008
+#define BLE_EVENT_CONNECTING   0x0040
 
 typedef enum {
     OFF = 0,
@@ -35,18 +35,18 @@ typedef enum {
     DISCOVERING,
     CONNECTING,
     CONNECTED
-} BLEState;
+} ble_state_t;
 
 typedef enum {
-    UNKNOWN = 0,
-    KEYBOARD1,
-    KEYBOARD2,
-    KEYBOARD3
-} BLEKeyboard;
+    BLE_KEYBOARD1,
+    BLE_KEYBOARD2,
+    BLE_KEYBOARD3,
+    BLE_KEYBOARD_SIZE
+} ble_keyboard_t;
 
 typedef struct {
-    BLEState state;
-    BLEKeyboard keyboard;
+    ble_state_t state;
+    ble_keyboard_t keyboard;
     uint8_t led_page;
 
 #ifdef NKRO_ENABLE
@@ -59,8 +59,9 @@ typedef struct {
 extern THD_WORKING_AREA(waBLEThread, 128);
 THD_FUNCTION(BLEThread, arg);
 
-void snowfox_ble_select(BLEKeyboard port);
+void snowfox_ble_select(ble_keyboard_t port);
 void snowfox_ble_discover(void);
 void snowfox_ble_connect(void);
 void snowfox_ble_disconnect(void);
 bool snowfox_ble_is_active(void);
+

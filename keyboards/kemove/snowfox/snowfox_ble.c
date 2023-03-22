@@ -15,10 +15,12 @@
 */
 
 #include "snowfox_ble.h"
+#include "snowfox_led.h"
 #include "ch.h"
 #include "hal.h"
 #include "host.h"
 #include "host_driver.h"
+#include "printf.h"
 #include <string.h>
 
 
@@ -26,7 +28,7 @@
 static uint8_t snowfox_ble_leds(void);
 static void snowfox_ble_mouse(report_mouse_t *report);
 static void snowfox_ble_keyboard(report_keyboard_t *report);
-static void snowfox_ble_system(report_extra_t *data);
+static void snowfox_ble_extra(report_extra_t *report);
 
 static void snowfox_ble_reset(void);
 static void snowfox_ble_swtich_ble_driver(void);
@@ -36,19 +38,19 @@ static void ble_command(const char* cmd);
 static void ble_command_wait(const char* cmd, const uint16_t waittime_ms);
 static uint8_t ble_check_ok(void);
 
-static uint8_t read_uart_msg(char *buffer, size_t buffer_size);
+static uint8_t read_uart_msg(char *buffer);
 
 /* -------------------- Static Local Variables ------------------------------ */
 static host_driver_t snowfox_ble_driver = {
     snowfox_ble_leds,
     snowfox_ble_keyboard,
     snowfox_ble_mouse,
-    snowfox_ble_system
+    snowfox_ble_extra
 };
 
 ble_handle_t ble_handle = {
     .state = OFF,
-    .keyboard = UNKNOWN,
+    .keyboard = BLE_KEYBOARD1,
     .led_page = 0,
 
     /* chibios-driver is not assigned until the usersapce initialization has finished.
@@ -67,12 +69,12 @@ static uint8_t snowfox_ble_leds(void) {
 static void snowfox_ble_mouse(report_mouse_t *report) {}
 
 static void snowfox_ble_keyboard(report_keyboard_t *report) {
-    uint8_t buffer[15] = {'A', 'T', '+', 'H', 'I', 'D','=', 0x1,
-    report->raw[0], report->raw[2], report->raw[3], report->raw[4], report->raw[5], report->raw[6], report->raw[7]};
-    sdWrite(&SD1, buffer, 15);
+    sdWrite(&SD1, (uint8_t*) "AT+HID=\1", 8);
+    sdWrite(&SD1, (uint8_t*) &report->mods, sizeof(report->mods));
+    sdWrite(&SD1, (uint8_t*) &report->keys, sizeof(report->keys));
 }
 
-static void snowfox_ble_system(report_extra_t *data) {}
+static void snowfox_ble_extra(report_extra_t *report) {}
 
 static void snowfox_ble_swtich_ble_driver(void) {
     if (host_get_driver() == &snowfox_ble_driver) {
@@ -100,7 +102,7 @@ static void snowfox_restore_driver(void) {
     host_set_driver(ble_handle.last_driver);
 }
 
-static void snowfox_ble_reset() {
+static void snowfox_ble_reset(void) {
     if (SD1.state == SD_READY) {
         sdStop(&SD1);
     }
@@ -116,12 +118,14 @@ static void snowfox_ble_reset() {
     sdStop(&SD1);
     serialCfg.speed=115200;
     sdStart(&SD1, &serialCfg);
+
+    chThdSleepMilliseconds(50);
 }
 
-static void snowfox_ble_update_name() {
-    char cmd[BLE_UART_BUFFER_SIZE] = "AT+NAME=SnowfoxQMK?\r\n";
-    cmd[18] = ble_handle.keyboard + '0';
-    ble_command_wait(cmd, 100);
+static void snowfox_ble_update_name(void) {
+    char buffer[24] = "AT+NAME=SnowfoxQMK:?\r\n";
+    buffer[19] = ble_handle.keyboard + 1 + '0';
+    ble_command(buffer);
 }
 
 static void ble_command(const char* cmd) {
@@ -129,7 +133,7 @@ static void ble_command(const char* cmd) {
 }
 
 static uint8_t ble_check_ok(void) {
-    uint8_t length = read_uart_msg(uart_rx_buffer, BLE_UART_BUFFER_SIZE);
+    uint8_t length = read_uart_msg(uart_rx_buffer);
     uint8_t result = 0;
     if (strncmp("OK", uart_rx_buffer, length) == 0) {
         result = 1;
@@ -177,8 +181,8 @@ static void update_event(uint8_t flag) {
             break;
 
         default:
-            break;
     }
+    ble_update_kb(&ble_handle);
 }
 
 static void process_response(char* buffer) {
@@ -187,11 +191,11 @@ static void process_response(char* buffer) {
     }
 
     else if (strncmp("+LEDPAGE:", buffer, 9) == 0) {
-        switch_led_page(buffer[9] - (uint8_t)'0');
+        switch_led_page((uint8_t) strtol(buffer+9, NULL, 16));
     }
 
     else if (strncmp("+KEYBOARD:", buffer, 10) == 0) {
-        ble_handle.keyboard = buffer[10] - '0';
+        ble_handle.keyboard = strtol(buffer+10, NULL, 10) - 1;
         snowfox_ble_update_name();
     }
 
@@ -201,13 +205,13 @@ static void process_response(char* buffer) {
 }
 
 /* -------------------- BLE ready semaphore --------------------------------- */
-static uint8_t read_uart_msg(char *buffer, size_t buffer_size) {
-    char *p_write = buffer;
-    char *p_end = buffer + buffer_size;
+static uint8_t read_uart_msg() {
+    char *p_write = uart_rx_buffer;
+    char *p_end = uart_rx_buffer + BLE_UART_BUFFER_SIZE;
     uint8_t length = 0;
 
     while(p_write < p_end - 1) {
-        msg_t raw = sdGetTimeout(&SD1, TIME_MS2I(10));
+        msg_t raw = sdGetTimeout(&SD1, TIME_MS2I(100));
 
         if (raw == MSG_TIMEOUT || raw == MSG_RESET || raw == '\r' || raw == '\n') {
             break;
@@ -230,11 +234,11 @@ THD_FUNCTION(BLEThread, arg) {
     chRegSetThreadName("BLEThread");
 
     snowfox_ble_reset();
-    ble_command_wait("AT+KEYBOARD?\r\n", 100);
-    ble_command_wait("AT+DISCONN\r\n", 100);
+    ble_command("AT+KEYBOARD?\r\n");
+    ble_command("AT+DISCONN\r\n");
 
     while(1) {
-        uint8_t length = read_uart_msg(uart_rx_buffer, BLE_UART_BUFFER_SIZE);
+        uint8_t length = read_uart_msg(uart_rx_buffer);
         if (length > 0) {
             process_response(uart_rx_buffer);
             memset(uart_rx_buffer, 0, BLE_UART_BUFFER_SIZE);
@@ -243,19 +247,18 @@ THD_FUNCTION(BLEThread, arg) {
 }
 
 /* -------------------- Public Function Implementation ---------------------- */
-void snowfox_ble_select(BLEKeyboard port) {
+void snowfox_ble_select(ble_keyboard_t port) {
     switch (port) {
-        case KEYBOARD1:
+        case BLE_KEYBOARD1:
             ble_command_wait("AT+KEYBOARD=1\r\n", 100);
             break;
-        case KEYBOARD2:
+        case BLE_KEYBOARD2:
             ble_command_wait("AT+KEYBOARD=2\r\n", 100);
             break;
-        case KEYBOARD3:
+        case BLE_KEYBOARD3:
             ble_command_wait("AT+KEYBOARD=3\r\n", 100);
             break;
         default:
-            break;
     }
     ble_handle.keyboard = port;
     snowfox_ble_update_name();

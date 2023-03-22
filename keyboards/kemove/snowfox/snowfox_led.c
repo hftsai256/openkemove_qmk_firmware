@@ -1,6 +1,10 @@
-#include "print.h"
 #include "snowfox.h"
+#include "snowfox_led.h"
 #include "snowfox_ble.h"
+#include "printf.h"
+#include <string.h>
+
+#define ANIME_PERIOD      50
 
 const SPIConfig spi1Config = {
   .clock_divider = 1, // No Division
@@ -9,59 +13,156 @@ const SPIConfig spi1Config = {
   .data_size = 8, // 8 bits per transfer
 };
 
-uint8_t led_brightness = 0xFF;
+uint8_t led_brightness = 0x10;
+uint32_t anime_frame = 0;
 
 static mutex_t led_profile_mutex;
 
-typedef void (*led_udpate_cb_t)(void);
-typedef void (*led_action_up_t)(void);
-typedef void (*led_action_dn_t)(void);
-
-typedef struct {
-    led_udpate_cb_t update;
-    // led_action_up_t up;
-    // led_action_dn_t dn;
-} led_profile_t;
+typedef rgb_color_t (*led_update_fn)(uint8_t);
 
 // ========= BEGIN PROFILES =========
 
-void led_profile_cycle_update(void) {
-    static HsvColor currentColor = {.h = 0, .s = 0xFF, .v = 0xFF};
-    currentColor.h += 1;
-    currentColor.v = led_brightness;
-    RgbColor rgb = HsvToRgb(currentColor);
-    for (int i = 0; i < 61; ++i)
-    {
-        sled_set_color(i, rgb.r, rgb.g, rgb.b);
-    }
+static rgb_color_t led_profile_cycle_colormap(uint8_t ind) {
+    static hsv_color_t hsv = {.h = 0, .s = 0xFF, .v = 0xFF};
+    hsv.h = (anime_frame >> 2) & 0xFF;
+    hsv.v = led_brightness;
+
+    return hsv_to_rgb(hsv);
 }
 
-void led_profile_static_update(void) {
-    static HsvColor currentColor = {.h = 0, .s = 0x00, .v = 0xFF};
-    RgbColor rgb = HsvToRgb(currentColor);
-    currentColor.v = led_brightness;
-    for (int i = 0; i < 61; ++i)
-    {
-        sled_set_color(i, rgb.r, rgb.g, rgb.b);
-    }
+static rgb_color_t led_profile_white_colormap(uint8_t ind) {
+    return hsv_to_rgb((hsv_color_t) {
+        .h = 0, .s = 0, .v = led_brightness
+    });
+}
+
+static rgb_color_t led_profile_yellow_colormap(uint8_t ind) {
+    return hsv_to_rgb((hsv_color_t) {
+        .h = 42, .s = 255, .v = led_brightness
+    });
+}
+
+static rgb_color_t led_profile_green_colormap(uint8_t ind) {
+    return hsv_to_rgb((hsv_color_t) {
+        .h = 85, .s = 255, .v = led_brightness
+    });
+}
+
+static rgb_color_t led_profile_cyan_colormap(uint8_t ind) {
+    return hsv_to_rgb((hsv_color_t) {
+        .h = 127, .s = 255, .v = led_brightness
+    });
 }
 
 // ========= END PROFILES ===========
 
-const led_profile_t led_profiles[] = {
-    {led_profile_cycle_update},
-    {led_profile_static_update},
+const led_update_fn led_profiles[] = {
+    led_profile_cycle_colormap,
+    led_profile_white_colormap,
+    led_profile_green_colormap,
+    led_profile_yellow_colormap,
+    led_profile_cyan_colormap,
 };
 
 static uint8_t current_profile = 0;
 const uint8_t num_profiles = sizeof(led_profiles) / sizeof(led_profiles[0]);
 static bool led_active = false;
 
-void snowfox_early_led_init(void) {
-    palSetLine(LINE_LED1_CS);
-    palSetLine(LINE_LED2_CS);
-    spiStart(&SPID1, &spi1Config);
+bool led_update_kb(led_t led_state) {
+    bool res = led_update_user(led_state);
+    if (res) {
+        status_conf[SLED_STATUS_CONF_NUM_LOCK].enable = led_state.num_lock;
+        status_conf[SLED_STATUS_CONF_CAPS_LOCK].enable = led_state.caps_lock;
+        status_conf[SLED_STATUS_CONF_SCROLL_LOCK].enable = led_state.scroll_lock;
+    }
+    return res;
+}
 
+static inline void sled_ble_clear(sled_status_conf_t* conf) {
+        conf->enable = false;
+        conf->blink = false;
+}
+
+static void sled_ble_discover(sled_status_conf_t* conf) {
+    conf->enable = true;
+    conf->blink = true;
+    conf->rgb = (rgb_color_t) {.r=0, .g=255, .b=255};
+}
+
+
+static void sled_ble_connecting(sled_status_conf_t* conf) {
+    conf->enable = true;
+    conf->blink = true;
+    conf->rgb = (rgb_color_t) {.r=255, .g=0, .b=255};
+}
+
+static void sled_ble_active(sled_status_conf_t* conf) {
+    conf->enable = true;
+    conf->blink = false;
+    conf->rgb = (rgb_color_t) {.r=0, .g=255, .b=255};
+}
+
+static sled_status_conf_t* ble_sled_getconf(ble_keyboard_t kb) {
+    switch (kb) {
+        case BLE_KEYBOARD1:
+            return &status_conf[SLED_STATUS_CONF_BLE1];
+
+        case BLE_KEYBOARD2:
+            return &status_conf[SLED_STATUS_CONF_BLE2];
+
+        case BLE_KEYBOARD3:
+            return &status_conf[SLED_STATUS_CONF_BLE3];
+
+        default:
+            return NULL;
+    }
+}
+
+bool ble_update_kb(ble_handle_t* ble_state) {
+    sled_status_conf_t *active = ble_sled_getconf(ble_state->keyboard);
+    sled_status_conf_t *sweeper;
+
+    for (ble_keyboard_t kb=BLE_KEYBOARD1; kb < BLE_KEYBOARD_SIZE; kb++) {
+        sweeper = ble_sled_getconf(kb);
+
+        if (sweeper == active) {
+            switch (ble_state->state) {
+                case DISCOVERING:
+                    sled_ble_discover(sweeper);
+                    break;
+                case CONNECTING:
+                    sled_ble_connecting(sweeper);
+                    break;
+                case CONNECTED:
+                    sled_ble_active(sweeper);
+                    break;
+                default:
+                    sled_ble_clear(sweeper);
+            }
+        } else {
+            sled_ble_clear(sweeper);
+        }
+    }
+
+    return true;
+}
+
+void static status_led_relay(void) {
+    for (uint8_t i=0; i < SLED_STATUS_CONF_SIZE; i++) {
+        sled_status_conf_t* conf = &status_conf[i];
+
+        if (conf->enable) {
+            sled_set_cache_blink(conf->pos, conf->blink);
+            sled_set_cache_color(conf->pos, conf->rgb);
+        }
+    }
+}
+
+void reset_anime_frame(void) {
+    anime_frame = 0;
+}
+
+void snowfox_early_led_init(void) {
     sled_early_init();
     chMtxObjectInit(&led_profile_mutex);
 }
@@ -71,14 +172,25 @@ THD_FUNCTION(LEDThread, arg) {
     (void)arg;
     chRegSetThreadName("LEDThread");
     sled_init();
-    sled_off();
     while(1) {
-        chThdSleepMilliseconds(50);
-        chMtxLock(&led_profile_mutex); // Begin Critical Section
-        led_udpate_cb_t updateFn = led_profiles[current_profile].update;
-        chMtxUnlock(&led_profile_mutex); // End Critical Section
-        (*updateFn)();
-        sled_update_matrix();
+        chThdSleepMilliseconds(ANIME_PERIOD);
+
+        if (led_active) {
+            led_update_fn colormap = led_profiles[current_profile];
+
+            for (uint8_t i=0; i<MATRIX_ROWS; i++) {
+                for (uint8_t j=0; j<MATRIX_COLS; j++) {
+                    uint8_t ind = keypos_led_map[i][j];
+                    sled_set_cache_color(ind, (*colormap)(ind));
+                }
+            }
+        } else {
+            sled_cache_init();
+        }
+
+        status_led_relay();
+        sled_apply();
+        anime_frame++;
     }
 }
 
@@ -105,21 +217,13 @@ void suspend_wakeup_init_kb(void) {
 }
 
 void snowfox_led_on(void) {
-#ifdef CONSOLE_ENABLE
-    uprintf("LED on\n");
-#endif 
     if (led_active) {
         snowfox_led_next();
     } else {
-        sled_on();
         led_active = true;
     }
 }
 
 void snowfox_led_off(void) {
-#ifdef CONSOLE_ENABLE
-    uprintf("LED off\n");
-#endif 
-    sled_off();
     led_active = false;
 }
