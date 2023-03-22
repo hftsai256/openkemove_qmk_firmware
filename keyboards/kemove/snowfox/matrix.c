@@ -21,8 +21,8 @@ static matrix_row_t matrix[MATRIX_COLS];
 static matrix_row_t matrix_debouncing[MATRIX_COLS];
 static uint32_t debounce_times[MATRIX_COLS];
 
-ioline_t row_list[] = {B25, A0,  B20, A5,  A7,  B19, B23, B24};
-ioline_t col_list[] = {B28, B31, A22, B29, A11, A12, A13, A14, B13};
+ioline_t row_list[] = MATRIX_ROW_PINS;
+ioline_t col_list[] = MATRIX_COL_PINS;
 
 void matrix_init(void) {
     memset(matrix, 0, MATRIX_COLS * sizeof(matrix_row_t));
@@ -42,7 +42,7 @@ uint8_t matrix_scan(void) {
         // read i/o ports
         port_cache[0] = palReadPort(IOPORT0);
         port_cache[1] = palReadPort(IOPORT1);
-        //palSetLine(col_list[col]);
+        palSetLine(col_list[col]);
 
         // get columns from ports
         matrix_row_t data = 0;
@@ -59,7 +59,7 @@ uint8_t matrix_scan(void) {
             // whenever row changes restart debouncing
             matrix_debouncing[col] = data;
             debounce_times[col] = timer_read32();
-        } else if(debounce_times[col] && timer_elapsed32(debounce_times[col]) >= DEBOUNCE){
+        } else if(debounce_times[col] && timer_elapsed32(debounce_times[col]) >= DEBOUNCE) {
             // when debouncing complete, update matrix
             matrix[col] = matrix_debouncing[col];
             debounce_times[col] = 0;

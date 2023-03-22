@@ -1,14 +1,16 @@
 #include "snowfox.h"
-#include "snowfox_ble.h"
-#include "string.h"
+#include "print.h"
+//#include "snowfox_ble.h"
+//#include "string.h"
 
+/*
 thread_t *led_thread = NULL;
 thread_t *ble_thread = NULL;
 
 SerialConfig serialCfg = {
     9600
 };
-
+*/
 bool dip_switch_update_kb(uint8_t index, bool active) {
 if (!dip_switch_update_user(index, active)) { return false; }
   switch (index) {
@@ -19,16 +21,12 @@ if (!dip_switch_update_user(index, active)) { return false; }
   }
   return true;
 }
-
-void board_init(void) {
-    snowfox_early_led_init();
-}
-
+/*
 void matrix_init_kb(void) {
-    led_thread = chThdCreateStatic(waLEDThread, sizeof(waLEDThread), NORMALPRIO, LEDThread, NULL);
-    ble_thread = chThdCreateStatic(waBLEThread, sizeof(waBLEThread), NORMALPRIO, BLEThread, NULL);
-    matrix_init_user();
+    //led_thread = chThdCreateStatic(waLEDThread, sizeof(waLEDThread), NORMALPRIO, LEDThread, NULL);
+    //ble_thread = chThdCreateStatic(waBLEThread, sizeof(waBLEThread), NORMALPRIO, BLEThread, NULL);
 }
+*/
 
 void bootloader_jump(void) {
     *((volatile uint32_t*) 0x100001F0) = 0xDEADBEEF;
@@ -38,9 +36,18 @@ void bootloader_jump(void) {
     while(1) {}
 }
 
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  // If console is enabled, it will print the matrix position and status of each key pressed
+#ifdef CONSOLE_ENABLE
+    uprintf("KL: kc: 0x%04X, col: %2u, row: %2u, pressed: %u, time: %5u, int: %u, count: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed, record->event.time, record->tap.interrupted, record->tap.count);
+#endif 
+  return true;
+}
+
 /*!
  * @returns false   processing for this keycode has been completed.
  */
+/*
 bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
         switch (keycode) {
@@ -95,4 +102,4 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     }
     return process_record_user(keycode, record);
 }
-
+*/

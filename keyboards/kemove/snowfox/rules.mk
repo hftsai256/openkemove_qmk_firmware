@@ -18,6 +18,7 @@ OPT_DEFS = -Wno-unused-function -fdump-rtl-dfinit -fstack-usage
 EXTRALDFLAGS = -Wl,--print-memory-usage
 
 # Options
+DEBOUNCE_TYPE = sym_defer_g
 
 # Keys
 CUSTOM_MATRIX = yes
