@@ -94,6 +94,8 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
             case SNOWFOX_BLE_KB3:
                 snowfox_ble_select(BLE_KEYBOARD3);
                 return false;
+            case SNOWFOX_DEBUG:
+                return false;
             default:
                 break;
         }

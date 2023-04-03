@@ -14,83 +14,90 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "quantum.h"
 
-static matrix_row_t matrix[MATRIX_COLS];
-static matrix_row_t matrix_debouncing[MATRIX_COLS];
-static uint32_t debounce_times[MATRIX_COLS];
+#define MATRIX_INPUT_PRESSED_STATE 0
 
-ioline_t row_list[] = MATRIX_ROW_PINS;
-ioline_t col_list[] = MATRIX_COL_PINS;
+#ifdef MATRIX_ROW_PINS
+static pin_t row_pins[MATRIX_ROWS] = MATRIX_ROW_PINS;
+#endif // MATRIX_ROW_PINS
+#ifdef MATRIX_COL_PINS
+static pin_t col_pins[MATRIX_COLS] = MATRIX_COL_PINS;
+#endif // MATRIX_COL_PINS
 
-void matrix_init(void) {
-    memset(matrix, 0, MATRIX_COLS * sizeof(matrix_row_t));
-    memset(matrix_debouncing, 0, MATRIX_COLS * sizeof(matrix_row_t));
-    memset(debounce_times, 0, MATRIX_COLS * sizeof(uint32_t));
+#define ROWS_PER_HAND (MATRIX_ROWS)
 
-    matrix_init_kb();
+void matrix_init_custom(void) {};
+
+static inline uint8_t readMatrixPin(pin_t pin) {
+    if (pin != NO_PIN) {
+        return (palReadLine(pin) == MATRIX_INPUT_PRESSED_STATE) ? 0 : 1;
+    } else {
+        return 1;
+    }
 }
 
-uint8_t matrix_scan(void) {
-    // cache of input ports for columns
-    static uint32_t port_cache[2];
-    // scan each col
-    for (int col = 0; col < MATRIX_COLS; col++) {
-        palClearLine(col_list[col]);
-        __NOP(); __NOP(); __NOP(); __NOP(); __NOP();
-        // read i/o ports
-        port_cache[0] = palReadPort(IOPORT0);
-        port_cache[1] = palReadPort(IOPORT1);
-        palSetLine(col_list[col]);
+static bool select_col(uint8_t col) {
+    pin_t pin = col_pins[col];
+    if (pin != NO_PIN) {
+        palClearLine(pin);
+        return true;
+    }
+    return false;
+}
 
-        // get columns from ports
-        matrix_row_t data = 0;
-        for (int row = 0; row < MATRIX_ROWS; ++row) {
-            ioline_t line = row_list[row];
-            uint32_t port = port_cache[LPC_IOPORT_NUM(PAL_PORT(line))];
-            data |= (((port & (1 << PAL_PAD(line))) ? 0 : 1) << row); // Inverted
-        }
+static void unselect_col(uint8_t col) {
+    pin_t pin = col_pins[col];
+    if (pin != NO_PIN) {
+        palSetLine(pin);
+    }
+}
 
-        // if a key event happens <5ms before the system time rolls over,
-        // the event will "never" debounce
-        // but any event on the same row will reset the debounce timer
-        if (matrix_debouncing[col] != data) {
-            // whenever row changes restart debouncing
-            matrix_debouncing[col] = data;
-            debounce_times[col] = timer_read32();
-        } else if(debounce_times[col] && timer_elapsed32(debounce_times[col]) >= DEBOUNCE) {
-            // when debouncing complete, update matrix
-            matrix[col] = matrix_debouncing[col];
-            debounce_times[col] = 0;
+static void unselect_cols(void) {
+    for (uint8_t x = 0; x < MATRIX_COLS; x++) {
+        unselect_col(x);
+    }
+}
+
+static void matrix_read_rows_on_col(matrix_row_t current_matrix[], uint8_t current_col, matrix_row_t row_shifter) {
+    bool key_pressed = false;
+
+    // Select col
+    if (!select_col(current_col)) { // select col
+        return;                     // skip NO_PIN col
+    }
+    matrix_output_select_delay();
+
+    // For each row...
+    for (uint8_t row_index = 0; row_index < ROWS_PER_HAND; row_index++) {
+        // Check row pin state
+        if (readMatrixPin(row_pins[row_index]) == 0) {
+            // Pin LO, set col bit
+            current_matrix[row_index] |= row_shifter;
+            key_pressed = true;
+        } else {
+            // Pin HI, clear col bit
+            current_matrix[row_index] &= ~row_shifter;
         }
     }
 
-    matrix_scan_kb();
-    return 1;
+    // Unselect col
+    unselect_col(current_col);
+    matrix_output_unselect_delay(current_col, key_pressed); // wait for all Row signals to go HIGH
 }
 
-bool matrix_is_on(uint8_t row, uint8_t col) {
-    return (matrix[col] & (1 << row));
-}
+bool matrix_scan_custom(matrix_row_t current_matrix[]) {
+    matrix_row_t curr_matrix[MATRIX_ROWS] = {0};
 
-matrix_row_t matrix_get_row(uint8_t row)
-{
-    matrix_row_t data = 0;
-    for (uint8_t i = 0; i < MATRIX_COLS; ++i)
-    {
-        data |= ((matrix[i] >> row) & 1U) << i;
+    // Set col, read rows
+    matrix_row_t row_shifter = MATRIX_ROW_SHIFTER;
+    for (uint8_t current_col = 0; current_col < MATRIX_COLS; current_col++, row_shifter <<= 1) {
+        matrix_read_rows_on_col(curr_matrix, current_col, row_shifter);
     }
-    return data;
-}
 
-void matrix_print(void) {}
+    bool changed = memcmp(current_matrix, curr_matrix, sizeof(curr_matrix)) != 0;
+    if (changed) memcpy(current_matrix, curr_matrix, sizeof(curr_matrix));
 
-__attribute__((weak)) void matrix_init_kb(void) { matrix_init_user(); }
-
-__attribute__((weak)) void matrix_scan_kb(void) { matrix_scan_user(); }
-
-__attribute__((weak)) void matrix_init_user(void) {}
-
-__attribute__((weak)) void matrix_scan_user(void) {}
+    return changed;
+};
 
