@@ -17,6 +17,7 @@
 #pragma once
 
 #include "snowfox.h"
+#include "bluetooth.h"
 #include "quantum.h"
 #include "ch.h"
 

@@ -4,7 +4,6 @@
 #include "string.h"
 
 thread_t *led_thread = NULL;
-thread_t *ble_thread = NULL;
 
 SerialConfig serialCfg = {
     9600
@@ -24,7 +23,6 @@ if (!dip_switch_update_user(index, active)) { return false; }
 void matrix_init_kb(void) {
     snowfox_early_led_init();
     led_thread = chThdCreateStatic(waLEDThread, sizeof(waLEDThread), NORMALPRIO, LEDThread, NULL);
-    ble_thread = chThdCreateStatic(waBLEThread, sizeof(waBLEThread), NORMALPRIO, BLEThread, NULL);
 }
 
 void bootloader_jump(void) {

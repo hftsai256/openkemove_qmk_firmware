@@ -36,6 +36,7 @@ void early_hardware_init_post(void) {
     palSetLineMode(LINE_UART_TX, MODE_FUNC_ALT2 | MODE_AD_DIGITAL);
 
     palSetLineMode(LINE_BLE_RSTN, MODE_DIR_OUT | MODE_AD_DIGITAL);
+    palClearLine(LINE_BLE_RSTN);
 
     // Analog
     palSetLineMode(LINE_ADC_BAT, MODE_FUNC_ALT2 | MODE_AD_ANALOG);
