@@ -26,26 +26,78 @@
 static uint8_t snowfox_ble_leds(void);
 static void custom_ble_reset(void);
 
+static void uart_start(uint32_t baud);
+static void uart_stop(void);
+static void ble_custom_on(void);
+static void ble_custom_off(void);
 static void ble_command(const char* cmd);
-static void ble_command_wait(const char* cmd, const uint16_t waittime_ms);
-static uint8_t ble_check_ok(void);
+static void ble_command_lock(const char* cmd);
+static void ack_take(void);
+static void ack_release(void);
+static bool ack_pass(void);
 
 /* -------------------- Static Local Variables ------------------------------ */
 ble_handle_t ble_handle = {
     .state = OFF,
     .keyboard = BLE_KEYBOARD1,
     .led_page = 0,
-
-    /* chibios-driver is not assigned until the usersapce initialization has finished.
-   Therefore there's no way to story the default qmk driver over USB/serial during
-   initialization stage in userspace. */
-    .last_driver = NULL
+    .ack_lock = false,
+    .ack_lock_timestmp = 0,
 };
 
 static char uart_rx_buffer[BLE_UART_BUFFER_SIZE];
 const static char SENTINEL[] = "\r\n";
 
 /* -------------------- Static Function Implementation ---------------------- */
+static void uart_start(uint32_t baud) {
+    SerialConfig cfg;
+    if (baud > 0) {
+        cfg.speed = baud;
+    } else {
+        cfg.speed = 9600;
+    }
+    if (SD1.state == SD_STOP) {
+        sdStart(&SD1, &cfg);
+    }
+}
+
+static void uart_stop(void) {
+    if (SD1.state == SD_READY) {
+        sdStop(&SD1);
+    }
+}
+
+static void ble_custom_on(void) {
+    palSetLine(LINE_BLE_RSTN);
+}
+
+static void ble_custom_off(void) {
+    palClearLine(LINE_BLE_RSTN);
+}
+
+static void ack_take(void) {
+    while (!ack_pass()) {
+        wait_ms(100);
+    }
+    ble_handle.ack_lock = true;
+    ble_handle.ack_lock_timestmp = timer_read32();
+}
+
+static void ack_release(void) {
+    ble_handle.ack_lock = false;
+    ble_handle.ack_lock_timestmp = 0;
+}
+
+static bool ack_pass(void) {
+    if (ble_handle.ack_lock == true) {
+        uint32_t elapsed_time = timer_elapsed32(ble_handle.ack_lock_timestmp);
+        if (elapsed_time >= BLE_LOCK_TIMEOUT_MS) {
+            ack_release();
+        }
+    }
+    return !ble_handle.ack_lock;
+}
+
 static uint8_t snowfox_ble_leds(void) {
     return ble_handle.led_page;
 }
@@ -53,6 +105,11 @@ static uint8_t snowfox_ble_leds(void) {
 static void ble_command(const char* raw_cmd) {
     sdWrite(&SD1, (uint8_t*) raw_cmd, strlen(raw_cmd));
     sdWrite(&SD1, (uint8_t*) SENTINEL, strlen((char*) SENTINEL));
+}
+
+static void ble_command_lock(const char* raw_cmd) {
+    ble_command(raw_cmd);
+    ack_take();
 }
 
 static void switch_led_page(uint8_t page) {
@@ -92,11 +149,8 @@ static void update_event(uint8_t flag) {
 }
 
 static void process_response(char* buffer) {
-#ifdef CONSOLE_ENABLE
-    uprintf("UART Message Received: %s", buffer);
-#endif 
     if (strncmp("OK", buffer, 2) == 0) {
-        // TODO: join scheduled tasks
+        ack_release();
     }
 
     else if (strncmp("+LEDPAGE:", buffer, 9) == 0) {
@@ -114,52 +168,38 @@ static void process_response(char* buffer) {
 
 /* -------------------- Public Function Implementation ---------------------- */
 void ble_custom_init(void) {
-    serialCfg.speed = 9600;
-    sdStart(&SD1, &serialCfg);
-    palSetLine(LINE_BLE_RSTN);
-    wait_ms(100);
+    uart_start(9600);
+    ble_custom_on();
+    wait_ms(10);
 
     ble_command("AT+UART=115200");
 
-    sdStop(&SD1);
-    serialCfg.speed=115200;
-    sdStart(&SD1, &serialCfg);
+    uart_stop();
+    uart_start(115200);
     ble_command("AT+NAME=SnowfoxQMK");
 }
 
-void ble_custom_stop(void) {
-    if (SD1.state == SD_READY) {
-        sdStop(&SD1);
-    }
-    palClearLine(LINE_BLE_RSTN);
-}
-
-void ble_custom_reset(void) {
-    ble_custom_stop();
-    wait_ms(10);
-    ble_custom_init();
-}
-
 void ble_custom_task(void) {
-    const char* SENTINEL_END = SENTINEL + strlen(SENTINEL);
     static char* p_write = uart_rx_buffer;
-    static char* p_check = (char*) SENTINEL;
 
     while(1) {
         msg_t raw = sdGetTimeout(&SD1, TIME_IMMEDIATE);
 
         if (raw == MSG_TIMEOUT || raw == MSG_RESET) {
-            break;
+            if (!ack_pass()) {
+                wait_ms(10);
+                continue;
+            } else {
+                break;
+            }
         }
 
-        if (*p_check == raw) {
-            p_check++;
-            if (p_check >= SENTINEL_END) {
-                *p_write = 0;
+        if (raw == '\r' || raw == '\n') {
+            if (p_write > uart_rx_buffer) {
                 process_response(uart_rx_buffer);
 
+                memset(uart_rx_buffer, 0, sizeof(uart_rx_buffer));
                 p_write = uart_rx_buffer;
-                p_check = (char*) SENTINEL;
             }
         } else {
             *p_write++ = (char) raw;
@@ -183,29 +223,28 @@ void ble_custom_send_consumer(uint16_t usage) {}
 void snowfox_ble_select(ble_keyboard_t port) {
     switch (port) {
         case BLE_KEYBOARD1:
-            ble_command("AT+KEYBOARD=1");
+            ble_command_lock("AT+KEYBOARD=1");
             break;
         case BLE_KEYBOARD2:
-            ble_command("AT+KEYBOARD=2");
+            ble_command_lock("AT+KEYBOARD=2");
             break;
         case BLE_KEYBOARD3:
-            ble_command("AT+KEYBOARD=3");
+            ble_command_lock("AT+KEYBOARD=3");
             break;
         default:
             break;
     }
     ble_handle.keyboard = port;
-    ble_custom_reset();
     snowfox_ble_connect();
 }
 
 void snowfox_ble_discover(void) {
-    ble_command("AT+DISCOVER");
+    ble_command_lock("AT+DISCOVER");
 }
 void snowfox_ble_connect(void) {
-    ble_command("AT+CONN");
+    ble_command_lock("AT+CONN");
 }
 void snowfox_ble_disconnect(void) {
-    ble_command("AT+DISCONN");
+    ble_command_lock("AT+DISCONN");
 }
 

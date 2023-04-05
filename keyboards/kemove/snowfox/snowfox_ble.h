@@ -22,13 +22,14 @@
 #include "ch.h"
 
 #define BLE_UART_BUFFER_SIZE   32U
-#define BLE_HID_REPORT_SIZE    16U // Including null terminator
 
 #define BLE_EVENT_POST         0x0001
 #define BLE_EVENT_DISCOVER     0x0002
 #define BLE_EVENT_CONNECTED    0x0004
 #define BLE_EVENT_DROP         0x0008
 #define BLE_EVENT_CONNECTING   0x0040
+
+#define BLE_LOCK_TIMEOUT_MS    100
 
 typedef enum {
     OFF = 0,
@@ -49,12 +50,8 @@ typedef struct {
     ble_state_t state;
     ble_keyboard_t keyboard;
     uint8_t led_page;
-
-#ifdef NKRO_ENABLE
-    bool last_nkro_state;
-#endif
-
-    host_driver_t *last_driver;
+    bool ack_lock;
+    uint32_t ack_lock_timestmp;
 } ble_handle_t;
 
 extern THD_WORKING_AREA(waBLEThread, 128);
