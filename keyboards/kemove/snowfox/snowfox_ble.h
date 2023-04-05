@@ -29,7 +29,8 @@
 #define BLE_EVENT_DROP         0x0008
 #define BLE_EVENT_CONNECTING   0x0040
 
-#define BLE_LOCK_TIMEOUT_MS    100
+#define BLE_LOCK_TIMEOUT_MS    500
+#define BLE_MAX_COMMAND_QUEUE  16
 
 typedef enum {
     OFF = 0,
@@ -46,6 +47,17 @@ typedef enum {
     BLE_KEYBOARD_SIZE
 } ble_keyboard_t;
 
+typedef enum {
+    CONNECT = 1,
+    DISCOVER,
+    DROP_CONN,
+    CHANGE_NAME,
+    PICK_KEYBOARD1,
+    PICK_KEYBOARD2,
+    PICK_KEYBOARD3,
+    BLE_QUEUE_COMMAND_SIZE
+} ble_queue_cmd_t;
+
 typedef struct {
     ble_state_t state;
     ble_keyboard_t keyboard;
@@ -54,8 +66,21 @@ typedef struct {
     uint32_t ack_lock_timestmp;
 } ble_handle_t;
 
-extern THD_WORKING_AREA(waBLEThread, 128);
-THD_FUNCTION(BLEThread, arg);
+typedef struct {
+    ble_queue_cmd_t buffer[BLE_MAX_COMMAND_QUEUE];
+    size_t counter;
+    size_t p_start;
+    size_t p_end;
+} _cmd_queue_t;
+
+typedef struct {
+    bool (*is_empty)(void);
+    bool (*is_full)(void);
+    void (*put)(ble_queue_cmd_t);
+    ble_queue_cmd_t (*pop)(void);
+} cmd_queue_api;
+
+extern cmd_queue_api* ble_cmdq;
 
 void snowfox_ble_select(ble_keyboard_t port);
 void snowfox_ble_discover(void);
