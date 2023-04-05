@@ -82,9 +82,5 @@ typedef struct {
 
 extern cmd_queue_api* ble_cmdq;
 
-void snowfox_ble_select(ble_keyboard_t port);
-void snowfox_ble_discover(void);
-void snowfox_ble_connect(void);
-void snowfox_ble_disconnect(void);
-bool snowfox_ble_is_active(void);
+bool ble_custom_is_connected(void);
 

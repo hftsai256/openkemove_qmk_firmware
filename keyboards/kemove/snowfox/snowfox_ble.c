@@ -149,10 +149,6 @@ static bool ack_pass(void) {
     return !ble_handle.ack_lock;
 }
 
-static uint8_t snowfox_ble_leds(void) {
-    return ble_handle.led_page;
-}
-
 static void ble_command(const char* raw_cmd) {
     dprintf("BLE UART Tx: %s\n", raw_cmd);
     sdWrite(&SD1, (uint8_t*) raw_cmd, strlen(raw_cmd));
@@ -162,14 +158,6 @@ static void ble_command(const char* raw_cmd) {
 static void ble_command_lock(const char* raw_cmd) {
     ble_command(raw_cmd);
     ack_take();
-}
-
-static void switch_led_page(uint8_t page) {
-    if (page <= 9) {
-        ble_handle.led_page = page;
-    } else { // fallback, should not happen
-        ble_handle.led_page = 0;
-    }
 }
 
 static void update_event(uint8_t flag) {
@@ -242,7 +230,7 @@ static void process_response(char* buffer) {
     }
 
     else if (strncmp("+LEDPAGE:", buffer, 9) == 0) {
-        switch_led_page((uint8_t) strtol(buffer+9, NULL, 16));
+        ble_handle.led_page = strtol(buffer+9, NULL, 16);
     }
 
     else if (strncmp("+KEYBOARD:", buffer, 10) == 0) {
@@ -271,6 +259,10 @@ void ble_custom_init(void) {
 void ble_custom_task(void) {
     static char* p_write = uart_rx_buffer;
 
+    if (ble_custom_is_connected()) {
+        led_update_kb((led_t) ble_handle.led_page);
+    }
+
     while(!ble_cmdq->is_empty()) {
         if (ack_pass()) {
             dispatch_command(ble_cmdq);
@@ -283,7 +275,7 @@ void ble_custom_task(void) {
         msg_t raw = sdGetTimeout(&SD1, TIME_IMMEDIATE);
 
         if (raw == MSG_TIMEOUT || raw == MSG_RESET) {
-            return;
+            break;
         }
 
         if (raw == '\r' || raw == '\n') {
