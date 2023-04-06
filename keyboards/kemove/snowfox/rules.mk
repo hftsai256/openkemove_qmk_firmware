@@ -22,7 +22,6 @@ DEBOUNCE_TYPE = sym_defer_g
 
 # Keys
 CUSTOM_MATRIX = lite
-NKRO_ENABLE = yes
 MOUSEKEY_ENABLE = yes
 EXTRAKEY_ENABLE = yes
 KEY_LOCK_ENABLE = no
@@ -35,5 +34,10 @@ RAW_ENABLE = no
 MIDI_ENABLE = no
 VIRTSER_ENABLE = no
 COMBO_ENABLE = no
+
+# Bluetooth driver
+# Note: NKRO will be disabled when bluetooth is enabled.
+# However, NKRO has to be forced or USB endpoint#1 will be flooded
+# to crash. Therefore it is a better idea to define NKRO somewhere else.
 BLUETOOTH_ENABLE = yes
 BLUETOOTH_DRIVER = custom

@@ -172,10 +172,14 @@ static void update_event(uint8_t flag) {
 
         case BLE_EVENT_CONNECTED:
             ble_handle.state = CONNECTED;
+            clear_keyboard();
+            keymap_config.nkro = false;
             break;
 
         case BLE_EVENT_DROP:
             ble_handle.state = STANDBY;
+            clear_keyboard();
+            keymap_config.nkro = true;
             break;
 
         case BLE_EVENT_CONNECTING:
@@ -296,6 +300,13 @@ bool ble_custom_is_connected(void) {
 }
 
 void ble_custom_send_keyboard(report_keyboard_t *report) {
+#ifdef CONSOLE_ENABLE
+    uprintf("uart tx: [%d bytes]: ", sizeof(report->raw));
+    for (uint8_t i=0; i < sizeof(report->raw); i++) {
+      uprintf(" %02X", ((uint8_t*)report)[i]);
+    }
+    uprint("\n");
+#endif 
     sdWrite(&SD1, (uint8_t*) "AT+HID=\1", 8);
     sdWrite(&SD1, (uint8_t*) &report->mods, sizeof(report->mods));
     sdWrite(&SD1, (uint8_t*) &report->keys, sizeof(report->keys));
