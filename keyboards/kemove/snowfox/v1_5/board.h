@@ -1,5 +1,14 @@
 #pragma once
-#include_next "board.h"
+#include_next <board.h>
+
+/*
+ * IO pins assignments.
+ *
+ * Define ST/SN GPIO convensions so that we could use A1..B31 shorthands as
+ * defined in chibios: platforms/chibios/_pin_defs.h
+ */
+#define GPIOA                                           IOPORT0
+#define GPIOB                                           IOPORT1
 
 #define LINE_DIP0                                       PAL_LINE(IOPORT0, 20)
 #define LINE_SSP1_MOSI                                  PAL_LINE(IOPORT0, 21)
