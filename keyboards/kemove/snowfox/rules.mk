@@ -1,9 +1,5 @@
 # KEMOVE_SNOWFOX
-SRC = matrix.c \
-	  sled17341.c \
-      snowfox_ble.c \
-      snowfox_led.c \
-      hardfault_handler.c
+SRC = matrix.c hardfault_handler.c
 
 # MCU
 MCU = cortex-m0
@@ -22,9 +18,9 @@ DEBOUNCE_TYPE = sym_defer_g
 
 # Keys
 CUSTOM_MATRIX = yes
-NKRO_ENABLE = yes
-MOUSEKEY_ENABLE = yes
-EXTRAKEY_ENABLE = yes
+NKRO_ENABLE = no
+MOUSEKEY_ENABLE = no
+EXTRAKEY_ENABLE = no
 KEY_LOCK_ENABLE = no
 
 # Other featues

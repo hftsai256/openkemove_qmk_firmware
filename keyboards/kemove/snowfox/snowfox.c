@@ -3,6 +3,7 @@
 #include "snowfox_ble.h"
 #include "string.h"
 
+/*
 thread_t *led_thread = NULL;
 thread_t *ble_thread = NULL;
 
@@ -34,7 +35,7 @@ void bootloader_jump(void) {
     __asm__ __volatile__("dsb");
     while(1) {}
 }
-
+*/
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   // If console is enabled, it will print the matrix position and status of each key pressed
 #ifdef CONSOLE_ENABLE
@@ -45,7 +46,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 /*!
  * @returns false   processing for this keycode has been completed.
- */
 bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
         switch (keycode) {
@@ -100,4 +100,4 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     }
     return process_record_user(keycode, record);
 }
-
+*/

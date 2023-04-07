@@ -1,5 +1,5 @@
+#include <board.h>
 #include "ch.h"
-#include <string.h>
 #include "hal.h"
 
 #define bkpt() __asm volatile("BKPT #0\n")
