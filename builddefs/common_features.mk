@@ -906,6 +906,11 @@ ifeq ($(strip $(BLUETOOTH_ENABLE)), yes)
         SRC += $(DRIVER_PATH)/bluetooth/rn42.c
         QUANTUM_LIB_SRC += uart.c
     endif
+
+    ifeq ($(strip $(BLUETOOTH_DRIVER)), custom)
+        SRC += $(DRIVER_PATH)/bluetooth/bluetooth_custom.c
+        OPT_DEFS += -DBLUETOOTH_CUSTOM
+    endif
 endif
 
 ifeq ($(strip $(ENCODER_ENABLE)), yes)

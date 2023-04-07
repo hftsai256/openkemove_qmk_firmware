@@ -14,30 +14,88 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "quantum.h"
 
-void matrix_init(void) {}
+#define MATRIX_INPUT_PRESSED_STATE 0
 
-uint8_t matrix_scan(void) {
-    return 1;
+#ifdef MATRIX_ROW_PINS
+static pin_t row_pins[MATRIX_ROWS] = MATRIX_ROW_PINS;
+#endif // MATRIX_ROW_PINS
+#ifdef MATRIX_COL_PINS
+static pin_t col_pins[MATRIX_COLS] = MATRIX_COL_PINS;
+#endif // MATRIX_COL_PINS
+
+#define ROWS_PER_HAND (MATRIX_ROWS)
+
+static inline uint8_t readMatrixPin(pin_t pin) {
+    if (pin != NO_PIN) {
+        return (palReadLine(pin) == MATRIX_INPUT_PRESSED_STATE) ? 0 : 1;
+    } else {
+        return 1;
+    }
 }
 
-bool matrix_is_on(uint8_t row, uint8_t col) {
-    return true;
+static bool select_col(uint8_t col) {
+    pin_t pin = col_pins[col];
+    if (pin != NO_PIN) {
+        palClearLine(pin);
+        return true;
+    }
+    return false;
 }
 
-matrix_row_t matrix_get_row(uint8_t row) {
-    return 0;
+static void unselect_col(uint8_t col) {
+    pin_t pin = col_pins[col];
+    if (pin != NO_PIN) {
+        palSetLine(pin);
+    }
 }
 
-void matrix_print(void) {}
+static void matrix_read_rows_on_col(matrix_row_t current_matrix[], uint8_t current_col, matrix_row_t row_shifter) {
+    bool key_pressed = false;
 
-__attribute__((weak)) void matrix_init_kb(void) { matrix_init_user(); }
+    // Select col
+    if (!select_col(current_col)) { // select col
+        return;                     // skip NO_PIN col
+    }
+    matrix_output_select_delay();
 
-__attribute__((weak)) void matrix_scan_kb(void) { matrix_scan_user(); }
+    // For each row...
+    for (uint8_t row_index = 0; row_index < ROWS_PER_HAND; row_index++) {
+        // Check row pin state
+        if (readMatrixPin(row_pins[row_index]) == 0) {
+            // Pin LO, set col bit
+            current_matrix[row_index] |= row_shifter;
+            key_pressed = true;
+        } else {
+            // Pin HI, clear col bit
+            current_matrix[row_index] &= ~row_shifter;
+        }
+    }
 
-__attribute__((weak)) void matrix_init_user(void) {}
+    // Unselect col
+    unselect_col(current_col);
+    matrix_output_unselect_delay(current_col, key_pressed); // wait for all Row signals to go HIGH
+}
 
-__attribute__((weak)) void matrix_scan_user(void) {}
+void matrix_init_custom(void) {
+    for (uint8_t x = 0; x < MATRIX_COLS; x++) {
+        unselect_col(x);
+    }
+}
+
+bool matrix_scan_custom(matrix_row_t current_matrix[]) {
+    matrix_row_t curr_matrix[MATRIX_ROWS] = {0};
+
+    // Set col, read rows
+    matrix_row_t row_shifter = MATRIX_ROW_SHIFTER;
+    for (uint8_t current_col = 0; current_col < MATRIX_COLS; current_col++, row_shifter <<= 1) {
+        matrix_read_rows_on_col(curr_matrix, current_col, row_shifter);
+    }
+
+    bool changed = memcmp(current_matrix, curr_matrix, sizeof(curr_matrix)) != 0;
+    if (changed) memcpy(current_matrix, curr_matrix, sizeof(curr_matrix));
+
+    return changed;
+};
 

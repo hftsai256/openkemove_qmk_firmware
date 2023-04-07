@@ -31,9 +31,6 @@ enum SNOWFOX_KEYCODES {
 extern THD_WORKING_AREA(waLEDThread, 128);
 THD_FUNCTION(LEDThread, arg);
 
-extern SerialConfig serialCfg;
-extern thread_t *ble_thread;
-
 extern const SPIConfig spi1Config;
 extern thread_t *led_thread;
 extern uint8_t led_brightness;

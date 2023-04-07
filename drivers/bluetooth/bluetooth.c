@@ -21,6 +21,8 @@
 #    include "bluefruit_le.h"
 #elif defined(BLUETOOTH_RN42)
 #    include "rn42.h"
+#elif defined(BLUETOOTH_CUSTOM)
+#    include "bluetooth_custom.h"
 #endif
 
 void bluetooth_init(void) {
@@ -28,12 +30,16 @@ void bluetooth_init(void) {
     bluefruit_le_init();
 #elif defined(BLUETOOTH_RN42)
     rn42_init();
+#elif defined(BLUETOOTH_CUSTOM)
+    bluetooth_custom_init();
 #endif
 }
 
 void bluetooth_task(void) {
 #if defined(BLUETOOTH_BLUEFRUIT_LE)
     bluefruit_le_task();
+#elif defined(BLUETOOTH_CUSTOM)
+    bluetooth_custom_task();
 #endif
 }
 
@@ -42,6 +48,8 @@ void bluetooth_send_keyboard(report_keyboard_t *report) {
     bluefruit_le_send_keyboard(report);
 #elif defined(BLUETOOTH_RN42)
     rn42_send_keyboard(report);
+#elif defined(BLUETOOTH_CUSTOM)
+    bluetooth_custom_send_keyboard(report);
 #endif
 }
 
@@ -50,6 +58,8 @@ void bluetooth_send_mouse(report_mouse_t *report) {
     bluefruit_le_send_mouse(report);
 #elif defined(BLUETOOTH_RN42)
     rn42_send_mouse(report);
+#elif defined(BLUETOOTH_CUSTOM)
+    bluetooth_custom_send_mouse(report);
 #endif
 }
 
@@ -58,5 +68,7 @@ void bluetooth_send_consumer(uint16_t usage) {
     bluefruit_le_send_consumer(usage);
 #elif defined(BLUETOOTH_RN42)
     rn42_send_consumer(usage);
+#elif defined(BLUETOOTH_CUSTOM)
+    bluetooth_custom_send_consumer(usage);
 #endif
 }

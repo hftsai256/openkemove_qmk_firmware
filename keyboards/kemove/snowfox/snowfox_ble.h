@@ -21,13 +21,15 @@
 #include "ch.h"
 
 #define BLE_UART_BUFFER_SIZE   32U
-#define BLE_HID_REPORT_SIZE    16U // Including null terminator
 
 #define BLE_EVENT_POST         0x0001
 #define BLE_EVENT_DISCOVER     0x0002
 #define BLE_EVENT_CONNECTED    0x0004
 #define BLE_EVENT_DROP         0x0008
 #define BLE_EVENT_CONNECTING   0x0040
+
+#define BLE_LOCK_TIMEOUT_MS    500
+#define BLE_MAX_COMMAND_QUEUE  8
 
 typedef enum {
     OFF = 0,
@@ -44,24 +46,40 @@ typedef enum {
     BLE_KEYBOARD_SIZE
 } ble_keyboard_t;
 
+typedef enum {
+    CONNECT = 1,
+    DISCOVER,
+    DROP_CONN,
+    CHANGE_NAME,
+    PICK_KEYBOARD1,
+    PICK_KEYBOARD2,
+    PICK_KEYBOARD3,
+    BLE_QUEUE_COMMAND_SIZE
+} ble_queue_cmd_t;
+
 typedef struct {
     ble_state_t state;
     ble_keyboard_t keyboard;
     uint8_t led_page;
-
-#ifdef NKRO_ENABLE
-    bool last_nkro_state;
-#endif
-
-    host_driver_t *last_driver;
+    bool ack_lock;
+    uint32_t ack_lock_timestmp;
 } ble_handle_t;
 
-extern THD_WORKING_AREA(waBLEThread, 128);
-THD_FUNCTION(BLEThread, arg);
+typedef struct {
+    ble_queue_cmd_t buffer[BLE_MAX_COMMAND_QUEUE];
+    size_t counter;
+    size_t p_start;
+    size_t p_end;
+} _cmd_queue_t;
 
-void snowfox_ble_select(ble_keyboard_t port);
-void snowfox_ble_discover(void);
-void snowfox_ble_connect(void);
-void snowfox_ble_disconnect(void);
-bool snowfox_ble_is_active(void);
+typedef struct {
+    bool (*is_empty)(void);
+    bool (*is_full)(void);
+    void (*put)(ble_queue_cmd_t);
+    ble_queue_cmd_t (*pop)(void);
+} cmd_queue_api;
+
+extern cmd_queue_api* ble_cmdq;
+
+bool bluetooth_custom_is_connected(void);
 

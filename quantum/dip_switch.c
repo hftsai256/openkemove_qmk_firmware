@@ -70,7 +70,7 @@ __attribute__((weak)) bool dip_switch_update_mask_kb(uint32_t state) {
     return dip_switch_update_mask_user(state);
 }
 
-void dip_switch_init(void) {
+__attribute__((weak)) void dip_switch_init(void) {
 #ifdef DIP_SWITCH_PINS
 #    if defined(SPLIT_KEYBOARD) && defined(DIP_SWITCH_PINS_RIGHT)
     if (!isLeftHand) {

@@ -3,29 +3,25 @@
 #include "snowfox_ble.h"
 #include "string.h"
 
-/*
 thread_t *led_thread = NULL;
-thread_t *ble_thread = NULL;
 
-SerialConfig serialCfg = {
-    9600
-};
-
+#if DIP_SWITCH_ENABLE
 bool dip_switch_update_kb(uint8_t index, bool active) {
-if (!dip_switch_update_user(index, active)) { return false; }
-  switch (index) {
-    case 0:
-      // v1.5: DIP on = Windows Layer, DIP off = Mac Layer
-      default_layer_set(1UL << (active ? 0 : 1));
-      break;
-  }
-  return true;
+    dprintf("dip switch callback on #%d: %s\n", index, active ? "true" : "false");
+    if (!dip_switch_update_user(index, active)) { return false; }
+        switch (index) {
+        case 0:
+            // v1.5: DIP on = Windows Layer, DIP off = Mac Layer
+            default_layer_set(1UL << (active ? 0 : 1));
+            break;
+        }
+      return true;
 }
+#endif
 
 void matrix_init_kb(void) {
     snowfox_early_led_init();
     led_thread = chThdCreateStatic(waLEDThread, sizeof(waLEDThread), NORMALPRIO, LEDThread, NULL);
-    ble_thread = chThdCreateStatic(waBLEThread, sizeof(waBLEThread), NORMALPRIO, BLEThread, NULL);
 }
 
 void bootloader_jump(void) {
@@ -35,17 +31,7 @@ void bootloader_jump(void) {
     __asm__ __volatile__("dsb");
     while(1) {}
 }
-*/
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  // If console is enabled, it will print the matrix position and status of each key pressed
-#ifdef CONSOLE_ENABLE
-    uprintf("KL: kc: 0x%04X, col: %2u, row: %2u, pressed: %u, time: %5u, int: %u, count: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed, record->event.time, record->tap.interrupted, record->tap.count);
-#endif 
-  return true;
-}
 
-/*!
- * @returns false   processing for this keycode has been completed.
 bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
         switch (keycode) {
@@ -77,22 +63,25 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 }
                 return false;
             case SNOWFOX_BLE_CONN:
-                snowfox_ble_connect();
+                ble_cmdq->put(CONNECT);
                 return false;
             case SNOWFOX_BLE_DISCOVER:
-                snowfox_ble_discover();
+                ble_cmdq->put(DISCOVER);
                 return false;
             case SNOWFOX_BLE_DISCONN:
-                snowfox_ble_disconnect();
+                ble_cmdq->put(DROP_CONN);
                 return false;
             case SNOWFOX_BLE_KB1:
-                snowfox_ble_select(BLE_KEYBOARD1);
+                ble_cmdq->put(PICK_KEYBOARD1);
+                ble_cmdq->put(CONNECT);
                 return false;
             case SNOWFOX_BLE_KB2:
-                snowfox_ble_select(BLE_KEYBOARD2);
+                ble_cmdq->put(PICK_KEYBOARD2);
+                ble_cmdq->put(CONNECT);
                 return false;
             case SNOWFOX_BLE_KB3:
-                snowfox_ble_select(BLE_KEYBOARD3);
+                ble_cmdq->put(PICK_KEYBOARD3);
+                ble_cmdq->put(CONNECT);
                 return false;
             default:
                 break;
@@ -100,4 +89,4 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     }
     return process_record_user(keycode, record);
 }
-*/
+

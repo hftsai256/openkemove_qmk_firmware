@@ -19,6 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #    include "bluefruit_le.h"
 #endif
 
+#ifdef BLUETOOTH_CUSTOM
+#   include "bluetooth_custom.h"
+#endif
+
+
 uint8_t desired_output = OUTPUT_DEFAULT;
 
 /** \brief Set Output
@@ -41,9 +46,6 @@ __attribute__((weak)) void set_output_user(uint8_t output) {}
  * FIXME: Needs doc
  */
 uint8_t auto_detect_output(void) {
-    if (usb_connected_state()) {
-        return OUTPUT_USB;
-    }
 
 #ifdef BLUETOOTH_BLUEFRUIT_LE
     if (bluefruit_le_is_connected()) {
@@ -51,9 +53,20 @@ uint8_t auto_detect_output(void) {
     }
 #endif
 
+#ifdef BLUETOOTH_CUSTOM
+    return OUTPUT_BLUETOOTH; // should check if BT is connected here
+    if (bluetooth_custom_is_connected()) {
+        return OUTPUT_BLUETOOTH; // should check if BT is connected here
+    }
+#endif
+
 #ifdef BLUETOOTH_ENABLE
     return OUTPUT_BLUETOOTH; // should check if BT is connected here
 #endif
+
+    if (usb_connected_state()) {
+        return OUTPUT_USB;
+    }
 
     return OUTPUT_NONE;
 }
