@@ -54,6 +54,7 @@ typedef enum {
     PICK_KEYBOARD1,
     PICK_KEYBOARD2,
     PICK_KEYBOARD3,
+    QUERY_KEYBOARD,
     BLE_QUEUE_COMMAND_SIZE
 } ble_queue_cmd_t;
 

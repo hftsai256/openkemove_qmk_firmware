@@ -222,6 +222,9 @@ static void dispatch_command(cmd_queue_api* qu) {
             ble_handle.keyboard = BLE_KEYBOARD3;
             ble_command_lock("AT+KEYBOARD=3");
             break;
+        case QUERY_KEYBOARD:
+            ble_command_lock("AT+KEYBOARD?");
+            break;
         default:
             break;
     }
@@ -258,6 +261,7 @@ void bluetooth_custom_init(void) {
     uart_start(115200);
     ble_cmdq = queue_init();
     ble_cmdq->put(CHANGE_NAME);
+    ble_cmdq->put(QUERY_KEYBOARD);
 }
 
 void bluetooth_custom_task(void) {

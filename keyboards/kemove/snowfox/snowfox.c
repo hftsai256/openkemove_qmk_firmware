@@ -73,14 +73,17 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 return false;
             case SNOWFOX_BLE_KB1:
                 ble_cmdq->put(PICK_KEYBOARD1);
+                ble_cmdq->put(QUERY_KEYBOARD);
                 ble_cmdq->put(CONNECT);
                 return false;
             case SNOWFOX_BLE_KB2:
                 ble_cmdq->put(PICK_KEYBOARD2);
+                ble_cmdq->put(QUERY_KEYBOARD);
                 ble_cmdq->put(CONNECT);
                 return false;
             case SNOWFOX_BLE_KB3:
                 ble_cmdq->put(PICK_KEYBOARD3);
+                ble_cmdq->put(QUERY_KEYBOARD);
                 ble_cmdq->put(CONNECT);
                 return false;
             default:
