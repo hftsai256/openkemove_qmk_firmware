@@ -5,20 +5,19 @@
 
 thread_t *led_thread = NULL;
 
-SerialConfig serialCfg = {
-    9600
-};
-
+#if DIP_SWITCH_ENABLE
 bool dip_switch_update_kb(uint8_t index, bool active) {
-if (!dip_switch_update_user(index, active)) { return false; }
-  switch (index) {
-    case 0:
-      // v1.5: DIP on = Windows Layer, DIP off = Mac Layer
-      default_layer_set(1UL << (active ? 0 : 1));
-      break;
-  }
-  return true;
+    dprintf("dip switch callback on #%d: %s\n", index, active ? "true" : "false");
+    if (!dip_switch_update_user(index, active)) { return false; }
+        switch (index) {
+        case 0:
+            // v1.5: DIP on = Windows Layer, DIP off = Mac Layer
+            default_layer_set(1UL << (active ? 0 : 1));
+            break;
+        }
+      return true;
 }
+#endif
 
 void matrix_init_kb(void) {
     snowfox_early_led_init();
@@ -33,13 +32,6 @@ void bootloader_jump(void) {
     while(1) {}
 }
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  return true;
-}
-
-/*!
- * @returns false   processing for this keycode has been completed.
- */
 bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
         switch (keycode) {
@@ -90,8 +82,6 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
             case SNOWFOX_BLE_KB3:
                 ble_cmdq->put(PICK_KEYBOARD3);
                 ble_cmdq->put(CONNECT);
-                return false;
-            case SNOWFOX_DEBUG:
                 return false;
             default:
                 break;

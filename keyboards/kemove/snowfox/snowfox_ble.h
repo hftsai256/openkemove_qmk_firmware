@@ -17,7 +17,6 @@
 #pragma once
 
 #include "snowfox.h"
-#include "bluetooth.h"
 #include "quantum.h"
 #include "ch.h"
 
@@ -30,7 +29,7 @@
 #define BLE_EVENT_CONNECTING   0x0040
 
 #define BLE_LOCK_TIMEOUT_MS    500
-#define BLE_MAX_COMMAND_QUEUE  16
+#define BLE_MAX_COMMAND_QUEUE  8
 
 typedef enum {
     OFF = 0,
@@ -82,5 +81,5 @@ typedef struct {
 
 extern cmd_queue_api* ble_cmdq;
 
-bool ble_custom_is_connected(void);
+bool bluetooth_custom_is_connected(void);
 

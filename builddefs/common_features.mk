@@ -908,7 +908,7 @@ ifeq ($(strip $(BLUETOOTH_ENABLE)), yes)
     endif
 
     ifeq ($(strip $(BLUETOOTH_DRIVER)), custom)
-        SRC += $(DRIVER_PATH)/bluetooth/ble_custom.c
+        SRC += $(DRIVER_PATH)/bluetooth/bluetooth_custom.c
         OPT_DEFS += -DBLUETOOTH_CUSTOM
     endif
 endif

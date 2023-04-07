@@ -202,7 +202,7 @@ void snowfox_led_next(void) {
 
 void suspend_power_down_kb(void) {
 #if ENABLE_SLEEP_LED == TRUE
-    if (led_active && !ble_custom_is_connected()) {
+    if (led_active && !bluetooth_custom_is_connected()) {
         sled_off();
     }
 #endif

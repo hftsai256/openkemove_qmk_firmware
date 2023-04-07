@@ -1,6 +1,9 @@
 #pragma once
 #include_next <board.h>
 
+#define GPIOA  IOPORT0
+#define GPIOB  IOPORT1
+
 #define LINE_DIP0                                       PAL_LINE(IOPORT0, 20) // 3.3v (left) pin
 
 #define LINE_SSP1_MOSI                                  PAL_LINE(IOPORT0, 21)

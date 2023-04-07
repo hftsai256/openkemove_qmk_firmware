@@ -27,8 +27,6 @@ static pin_t col_pins[MATRIX_COLS] = MATRIX_COL_PINS;
 
 #define ROWS_PER_HAND (MATRIX_ROWS)
 
-void matrix_init_custom(void) {};
-
 static inline uint8_t readMatrixPin(pin_t pin) {
     if (pin != NO_PIN) {
         return (palReadLine(pin) == MATRIX_INPUT_PRESSED_STATE) ? 0 : 1;
@@ -50,12 +48,6 @@ static void unselect_col(uint8_t col) {
     pin_t pin = col_pins[col];
     if (pin != NO_PIN) {
         palSetLine(pin);
-    }
-}
-
-static void unselect_cols(void) {
-    for (uint8_t x = 0; x < MATRIX_COLS; x++) {
-        unselect_col(x);
     }
 }
 
@@ -84,6 +76,12 @@ static void matrix_read_rows_on_col(matrix_row_t current_matrix[], uint8_t curre
     // Unselect col
     unselect_col(current_col);
     matrix_output_unselect_delay(current_col, key_pressed); // wait for all Row signals to go HIGH
+}
+
+void matrix_init_custom(void) {
+    for (uint8_t x = 0; x < MATRIX_COLS; x++) {
+        unselect_col(x);
+    }
 }
 
 bool matrix_scan_custom(matrix_row_t current_matrix[]) {

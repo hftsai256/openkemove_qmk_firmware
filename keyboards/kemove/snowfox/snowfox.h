@@ -23,7 +23,6 @@ enum SNOWFOX_KEYCODES {
     SNOWFOX_BLE_KB1,
     SNOWFOX_BLE_KB2,
     SNOWFOX_BLE_KB3,
-    SNOWFOX_DEBUG,
     SNOWFOX_SAFE_RANGE,
 };
 
@@ -31,9 +30,6 @@ enum SNOWFOX_KEYCODES {
 
 extern THD_WORKING_AREA(waLEDThread, 128);
 THD_FUNCTION(LEDThread, arg);
-
-extern SerialConfig serialCfg;
-extern thread_t *ble_thread;
 
 extern const SPIConfig spi1Config;
 extern thread_t *led_thread;

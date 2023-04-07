@@ -31,8 +31,8 @@ static void custom_ble_reset(void);
 
 static void uart_start(uint32_t baud);
 static void uart_stop(void);
-static void ble_custom_on(void);
-static void ble_custom_off(void);
+static void bluetooth_custom_on(void);
+static void bluetooth_custom_off(void);
 static void ble_command(const char* cmd);
 static void ble_command_lock(const char* cmd);
 static void ack_take(void);
@@ -118,11 +118,11 @@ static void uart_stop(void) {
     }
 }
 
-static void ble_custom_on(void) {
+static void bluetooth_custom_on(void) {
     palSetLine(LINE_BLE_RSTN);
 }
 
-static void ble_custom_off(void) {
+static void bluetooth_custom_off(void) {
     palClearLine(LINE_BLE_RSTN);
 }
 
@@ -247,9 +247,9 @@ static void process_response(char* buffer) {
 }
 
 /* -------------------- Public Function Implementation ---------------------- */
-void ble_custom_init(void) {
+void bluetooth_custom_init(void) {
     uart_start(9600);
-    ble_custom_on();
+    bluetooth_custom_on();
     wait_ms(10);
 
     ble_command("AT+UART=115200");
@@ -260,10 +260,10 @@ void ble_custom_init(void) {
     ble_cmdq->put(CHANGE_NAME);
 }
 
-void ble_custom_task(void) {
+void bluetooth_custom_task(void) {
     static char* p_write = uart_rx_buffer;
 
-    if (ble_custom_is_connected()) {
+    if (bluetooth_custom_is_connected()) {
         led_update_kb((led_t) ble_handle.led_page);
     }
 
@@ -295,11 +295,11 @@ void ble_custom_task(void) {
     }
 }
 
-bool ble_custom_is_connected(void) {
+bool bluetooth_custom_is_connected(void) {
     return (ble_handle.state == CONNECTED);
 }
 
-void ble_custom_send_keyboard(report_keyboard_t *report) {
+void bluetooth_custom_send_keyboard(report_keyboard_t *report) {
 #ifdef CONSOLE_ENABLE
     uprintf("uart tx: [%d bytes]: ", sizeof(report->raw));
     for (uint8_t i=0; i < sizeof(report->raw); i++) {
@@ -312,6 +312,7 @@ void ble_custom_send_keyboard(report_keyboard_t *report) {
     sdWrite(&SD1, (uint8_t*) &report->keys, sizeof(report->keys));
 }
 
-void ble_custom_send_mouse(report_mouse_t *report) {}
-void ble_custom_send_consumer(uint16_t usage) {}
+void bluetooth_custom_send_mouse(report_mouse_t *report) {}
+void bluetooth_custom_send_consumer(uint16_t usage) {}
+
 

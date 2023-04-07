@@ -51,18 +51,9 @@
  * state in the bootmagic EEPROM settings. (Note that NKRO must be enabled in the
  * makefile for this to work.)
  *
- * If forced on, NKRO can be disabled via magic key (default = LShift+RShift+N)
- * until the next keyboard reset.
- *
- * NKRO may prevent your keystrokes from being detected in the BIOS, but it is
- * fully operational during normal computer usage.
- *
- * For a less heavy-handed approach, enable NKRO via magic key (LShift+RShift+N)
- * or via bootmagic (hold SPACE+N while plugging in the keyboard). Once set by
- * bootmagic, NKRO mode will always be enabled until it is toggled again during a
- * power-up.
- *
+ * NKRO is required otherwise USB traffic on endpoint#1 will be flooded to crash.
  */
 #define NKRO_ENABLE
+#define SHARED_EP_ENABLE
 #define FORCE_NKRO
 
