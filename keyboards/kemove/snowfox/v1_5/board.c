@@ -1,5 +1,4 @@
 #include "quantum.h"
-#include "dip_switch.h"
 
 void early_hardware_init_post(void) {
     // Matrix column GPIOs
@@ -40,12 +39,3 @@ void early_hardware_init_post(void) {
     palSetLineMode(LINE_ADC_BAT, MODE_FUNC_ALT2 | MODE_AD_ANALOG);
 }
 
-void dip_switch_init(void) {
-#ifdef DIP_SWITCH_PINS
-    ioline_t dip_switch_pad[] = DIP_SWITCH_PINS;
-    for (uint8_t i=0; i < sizeof(dip_switch_pad)/sizeof(dip_switch_pad[0]); i++) {
-        palSetLineMode(dip_switch_pad[i], MODE_DIR_IN | MODE_MODE_PULL_UP | MODE_AD_DIGITAL);
-    }
-    dip_switch_read(true);
-#endif
-}

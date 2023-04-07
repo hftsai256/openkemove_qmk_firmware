@@ -4,7 +4,6 @@
 #define GPIOA                   IOPORT0
 #define GPIOB                   IOPORT1
 
-
 #define LINE_SSP1_MOSI          PAL_LINE(IOPORT0, 21)
 #define LINE_SSP1_MISO          PAL_LINE(IOPORT1, 21)
 #define LINE_SSP1_SCK           PAL_LINE(IOPORT1, 15)
