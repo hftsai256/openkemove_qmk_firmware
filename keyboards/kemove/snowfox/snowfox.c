@@ -11,8 +11,7 @@ bool dip_switch_update_kb(uint8_t index, bool active) {
     if (!dip_switch_update_user(index, active)) { return false; }
         switch (index) {
         case 0:
-            // v1.5: DIP on = Windows Layer, DIP off = Mac Layer
-            default_layer_set(1UL << (active ? 0 : 1));
+            default_layer_set(active == DIP0_WIN);
             break;
         }
       return true;
