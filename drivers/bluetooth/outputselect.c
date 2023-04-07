@@ -54,14 +54,9 @@ uint8_t auto_detect_output(void) {
 #endif
 
 #ifdef BLUETOOTH_CUSTOM
-    return OUTPUT_BLUETOOTH; // should check if BT is connected here
     if (bluetooth_custom_is_connected()) {
         return OUTPUT_BLUETOOTH; // should check if BT is connected here
     }
-#endif
-
-#ifdef BLUETOOTH_ENABLE
-    return OUTPUT_BLUETOOTH; // should check if BT is connected here
 #endif
 
     if (usb_connected_state()) {

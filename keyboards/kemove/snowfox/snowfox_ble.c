@@ -301,11 +301,11 @@ bool bluetooth_custom_is_connected(void) {
 
 void bluetooth_custom_send_keyboard(report_keyboard_t *report) {
 #ifdef CONSOLE_ENABLE
-    uprintf("uart tx: [%d bytes]: ", sizeof(report->raw));
+    dprintf("uart tx: [%d bytes]: ", sizeof(report->raw));
     for (uint8_t i=0; i < sizeof(report->raw); i++) {
-      uprintf(" %02X", ((uint8_t*)report)[i]);
+      dprintf(" %02X", ((uint8_t*)report)[i]);
     }
-    uprint("\n");
+    dprint("\n");
 #endif 
     sdWrite(&SD1, (uint8_t*) "AT+HID=\1", 8);
     sdWrite(&SD1, (uint8_t*) &report->mods, sizeof(report->mods));
