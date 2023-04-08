@@ -50,6 +50,7 @@ typedef enum {
     CONNECT = 1,
     DISCOVER,
     DROP_CONN,
+    TOGGLE,
     CHANGE_NAME,
     PICK_KEYBOARD1,
     PICK_KEYBOARD2,

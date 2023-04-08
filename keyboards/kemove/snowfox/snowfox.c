@@ -9,12 +9,13 @@ thread_t *led_thread = NULL;
 bool dip_switch_update_kb(uint8_t index, bool active) {
     dprintf("dip switch callback on #%d: %s\n", index, active ? "true" : "false");
     if (!dip_switch_update_user(index, active)) { return false; }
-        switch (index) {
+    switch (index) {
         case 0:
             default_layer_set(active == DIP0_WIN);
             break;
         }
-      return true;
+    return true;
+
 }
 #endif
 
@@ -32,6 +33,7 @@ void bootloader_jump(void) {
 }
 
 bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    if (!process_record_user(keycode, record)) { return false; }
     if (record->event.pressed) {
         switch (keycode) {
             case SNOWFOX_LED_ON:
@@ -70,25 +72,43 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
             case SNOWFOX_BLE_DISCONN:
                 ble_cmdq->put(DROP_CONN);
                 return false;
-            case SNOWFOX_BLE_KB1:
-                ble_cmdq->put(PICK_KEYBOARD1);
-                ble_cmdq->put(QUERY_KEYBOARD);
-                ble_cmdq->put(CONNECT);
+            case LT(_FN2, SNOWFOX_BLE_KB1):
+                if (record->tap.count) {
+                    ble_cmdq->put(PICK_KEYBOARD1);
+                    ble_cmdq->put(QUERY_KEYBOARD);
+                    ble_cmdq->put(TOGGLE);
+                } else {
+                    ble_cmdq->put(PICK_KEYBOARD1);
+                    ble_cmdq->put(QUERY_KEYBOARD);
+                    ble_cmdq->put(DISCOVER);
+                }
                 return false;
-            case SNOWFOX_BLE_KB2:
-                ble_cmdq->put(PICK_KEYBOARD2);
-                ble_cmdq->put(QUERY_KEYBOARD);
-                ble_cmdq->put(CONNECT);
+            case LT(_FN2, SNOWFOX_BLE_KB2):
+                if (record->tap.count) {
+                    ble_cmdq->put(PICK_KEYBOARD2);
+                    ble_cmdq->put(QUERY_KEYBOARD);
+                    ble_cmdq->put(TOGGLE);
+                } else {
+                    ble_cmdq->put(PICK_KEYBOARD2);
+                    ble_cmdq->put(QUERY_KEYBOARD);
+                    ble_cmdq->put(DISCOVER);
+                }
                 return false;
-            case SNOWFOX_BLE_KB3:
-                ble_cmdq->put(PICK_KEYBOARD3);
-                ble_cmdq->put(QUERY_KEYBOARD);
-                ble_cmdq->put(CONNECT);
+            case LT(_FN2, SNOWFOX_BLE_KB3):
+                if (record->tap.count) {
+                    ble_cmdq->put(PICK_KEYBOARD3);
+                    ble_cmdq->put(QUERY_KEYBOARD);
+                    ble_cmdq->put(TOGGLE);
+                } else {
+                    ble_cmdq->put(PICK_KEYBOARD3);
+                    ble_cmdq->put(QUERY_KEYBOARD);
+                    ble_cmdq->put(DISCOVER);
+                }
                 return false;
             default:
                 break;
         }
     }
-    return process_record_user(keycode, record);
+    return true;
 }
 

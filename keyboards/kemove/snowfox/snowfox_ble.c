@@ -207,6 +207,12 @@ static void dispatch_command(cmd_queue_api* qu) {
         case DROP_CONN:
             ble_command_lock("AT+DISCONN");
             break;
+        case TOGGLE:
+            if (ble_handle.state == STANDBY) {
+                qu->put(CONNECT);
+            } else {
+                qu->put(DROP_CONN);
+            }
         case CHANGE_NAME:
             ble_command_lock("AT+NAME=SnowfoxQMK");
             break;

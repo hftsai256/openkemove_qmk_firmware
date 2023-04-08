@@ -9,6 +9,14 @@
 
 #define SF_LED_STEP 0x40
 
+enum layers {
+  MAC_BASE,
+  WIN_BASE,
+  _FN1,
+  _FN2,
+  _FN3
+};
+
 enum SNOWFOX_KEYCODES {
     SNOWFOX_LED_ON = SAFE_RANGE,
     SNOWFOX_LED_OFF,
