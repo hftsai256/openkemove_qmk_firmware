@@ -1,5 +1,5 @@
 /*
-Copyright 2020 3araht
+Copyright 2023 3araht
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,15 +17,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#define SELECT_SOFT_SERIAL_SPEED 1
-/*Sets the protocol speed when using serial communication*/
-//Speeds:
-//0: about 189kbps (Experimental only)
-//1: about 137kbps (default)
-//2: about 75kbps
-//3: about 39kbps
-//4: about 26kbps
-//5: about 20kbps
+
+/*
+ * Keyboard Matrix Assignments
+ *
+ * Change this to how you wired your keyboard
+ * COLS: AVR pins used for columns, left to right
+ * ROWS: AVR pins used for rows, top to bottom
+ * DIODE_DIRECTION: COL2ROW = COL = Anode (+), ROW = Cathode (-, marked on diode)
+ *                  ROW2COL = ROW = Anode (+), COL = Cathode (-, marked on diode)
+ *
+ */
+#define MATRIX_ROW_PINS { B5, B4, E6, D7, C6, D4 }
+#define MATRIX_COL_PINS { B1, F7, F6, F5, F4, B3, B2, B6, D0, D1 }
+#define MATRIX_ROW_PINS_RIGHT { D1, D0, D4, C6, D7, E6 }
+#define MATRIX_COL_PINS_RIGHT { F4, F5, F6, F7, B1, B3, B2, C7, B7, F1 }
+
+/* COL2ROW, ROW2COL */
+#define DIODE_DIRECTION COL2ROW
 
 // Right side has to be the master since 1, LED data is output from right side, and 2, Audio pin is prepared on right side as a reserve.
 #define MASTER_RIGHT
@@ -208,3 +217,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // #define NO_ACTION_TAPPING
 // NO_ACTION_ONESHOT -388 bytes
 #define NO_ACTION_ONESHOT
+/*
+ * Encoder options
+ */
+#ifdef ENCODER_ENABLE
+#   define ENCODER_RESOLUTIONS_RIGHT { 4 }
+#endif  // ENCODER_ENABLE
