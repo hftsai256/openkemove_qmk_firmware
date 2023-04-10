@@ -7,7 +7,6 @@ thread_t *led_thread = NULL;
 
 #if DIP_SWITCH_ENABLE
 bool dip_switch_update_kb(uint8_t index, bool active) {
-    dprintf("dip switch callback on #%d: %s\n", index, active ? "true" : "false");
     if (!dip_switch_update_user(index, active)) { return false; }
     switch (index) {
         case 0:
@@ -111,4 +110,13 @@ bool OVERRIDE process_record_kb(uint16_t keycode, keyrecord_t *record) {
     }
     return true;
 }
+
+void keyboard_post_init_user(void) {
+  // Customise these values to desired behaviour
+  debug_enable=true;
+  //debug_matrix=true;
+  debug_keyboard=true;
+  //debug_mouse=true;
+}
+
 
